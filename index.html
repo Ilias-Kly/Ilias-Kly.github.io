@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Traductor / Kly</title>
+</head>
+
+<body>
+    <div class="invisible-text">
+        Este es el traductor de Ilias lo hice con mucho cariño, pero tambien puedes llamarlo el traductor de Mari Paz
+    </div>
+
+    <label for="inputText">Tu texto:</label>
+    <textarea id="inputText" rows="10" placeholder="Type text here..."></textarea>
+
+    <div>
+        <label for="translateFrom">Traducir del:</label>
+        <select id="translateFrom">
+            <option value="en">English</option>
+        </select>
+        <label for="translateFrom">Traducir al:</label>
+        <select id="translateTo">
+            <option value="es">Spanish</option>
+        </select>
+    </div>
+
+    <button id="translateBtn">Traducir</button>
+    <button id="speakBtn">¡Hazme hablar!</button>
+    <div id="outputText" aria-readonly="true"></div>
+
+    <script src="countries.js"></script>
+    <script src="script.js"></script>
+    <div>
+        <div>
+            <h1>Nuestros Objetivos</h1>
+            <p>Estamos comprometidos con la excelencia en la traducción. Nuestra herramienta es extraordinaria; incluso supera a la habilidad de Mari Paz en la traducción del inglés al español. Buscamos brindarte un servicio de traducción excepcional, respaldado por una de las mejores APIs de traducción, como la de Collins, para garantizar traducciones completas y precisas. En caso de errores, ¡culpa a ellos! (¡Solo bromeamos! 😄)</p>
+        </div>
+    </div>
+    <footer class="footer">
+        Página web realizada por <span style="color: #fff00f;">Ilias</span> con mucho <span style="color: #e25555;">cariño♥️</span>
+    </footer>
+    
+</body>
+
+</html>
