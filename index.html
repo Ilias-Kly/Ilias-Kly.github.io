@@ -1,48 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ilias.kly</title>
     <link rel="stylesheet" href="style.css">
-    <title>Traductor / Kly</title>
+    <link rel="icon" href="ilias.kly.jpg" type="image/x-icon">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+       
+    </style>
 </head>
-
 <body>
-    <div class="invisible-text">
-        Este es el traductor de Ilias lo hice con mucho cariño, pero tambien puedes llamarlo el traductor de Mari Paz
+    <div id="linktree">
+        <img src="ilias.kly.jpg" alt="Foto de perfil" id="profile-picture">
+        <div id="username">@ilias.kly </div>
+
+        <a href="https://www.instagram.com/ilias.kly" target="_blank" class="link">
+            <i class="fab fa-instagram icon"></i> Instagram
+        </a>
+
+        <a href="mailto:serverkly@gmail.com" class="link">
+            <i class="far fa-envelope icon"></i> Gmail
+        </a>
+
+        <a href="portafolio.html" target="_blank" class="link">
+            <i class="fas fa-briefcase icon"></i> Portafolio
+        </a>
     </div>
 
-    <label for="inputText">Tu texto:</label>
-    <textarea id="inputText" rows="10" placeholder="Type text here..."></textarea>
+    <div id="blog-section">
+        <h2 style="color: #fff;">-------------Blog-------------</h2>
 
-    <div>
-        <label for="translateFrom">Traducir del:</label>
-        <select id="translateFrom">
-            <option value="en">English</option>
-        </select>
-        <label for="translateFrom">Traducir al:</label>
-        <select id="translateTo">
-            <option value="es">Spanish</option>
-        </select>
+        <div class="blog-card">
+            <img src="noti.png" alt="Imagen del Blog" class="blog-image">
+            <div>
+                <div class="blog-title">¿Como suscribirte?</div>
+                <a href="blog1.html" class="read-blog">Leer blog ^^</a>
+            </div>
+        </div>
+
+ 
+        </div>
     </div>
 
-    <button id="translateBtn">Traducir</button>
-    <button id="speakBtn">¡Hazme hablar!</button>
-    <div id="outputText" aria-readonly="true"></div>
-
-    <script src="countries.js"></script>
-    <script src="script.js"></script>
-    <div>
-    <div>
-        <h1>Nuestros Objetivos</h1>
-        <p>Estamos comprometidos con la excelencia en la traducción. Nuestra herramienta es extraordinaria; incluso supera a la habilidad de <span style="color: #e25555;">Mari Paz</span> en la traducción del inglés al español. Buscamos brindarte un servicio de traducción excepcional, respaldado por una de las mejores APIs de traducción, como la de Collins, para garantizar traducciones completas y precisas. En caso de errores, ¡culpa a ellos! (¡Solo bromeamos! 😄)</p>
-    </div>
-    </div>
-    <footer class="footer">
-        Página web realizada por <span style="color: #fff00f;">Ilias</span> con mucho <span style="color: #e25555;">cariño♥️</span>
-    </footer>
-    
+ 
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
-
 </html>
