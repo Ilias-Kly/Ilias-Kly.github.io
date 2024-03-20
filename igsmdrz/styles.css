@@ -1,68 +1,81 @@
-cuerpo {
-  familia tipográfica: 'Arial Negro', 'Arial', sans-serif;
-  margen: 0;
-  acolchado: 0;
-  tamaño caja: border-box;
-  fondo: url('antecedentes.jpg') centro/cubrir sin repetición; 
-  tamaño de fondo: 100% 100%;
-  antecedentes-repetir: sin repetición;
-  fondo adjunto: fijo;
+body {
+  font-family: 'Arial Black', 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background: url('background.jpg') center/cover no-repeat; 
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
-. .contenido {
-  texto alineado: centro;
-  margen: 50px;
-  color de fondo: rgba(255, 255, 255, 0,4); 
-  acolchado: 20px;
-  radio fronterizo: 10px;
-  acolchado: 20px;
+.contenido {
+  text-align: center;
+  margin: 50px;
+  background-color: rgba(255, 255, 255, 0.4); 
+  padding: 20px;
+  border-radius: 10px;
+  padding: 20px;
   
 
 }
 
 h1 {
   color: #007bff;
-  tipografía: negrita;
-  tamaño fuente: 2.5em;
+  font-weight: bold;
+  font-size: 2.5em;
 }
 h2 {
   color: #833AB4;
-  tipografía: negrita;
-  tamaño fuente: 2em;
+  font-weight: bold;
+  font-size: 2em;
 }
 p {
   color: #833AB4;
-  tamaño fuente: 1.5em;
+  font-size: 1.5em;
 
 
 }
 p1 {
   color: #007bff;
-  tamaño fuente: 1.5em;
+  font-size: 1.5em;
 
 
 }
 
 
-@medios sólo pantalla y (ancho máximo: 767px) {
- cuerpo {
-    fondo adjunto: fijo; 
-  }
-}
-. .pie de página {
-  posición: fijo;
-  abajo: 0;
-  izquierda: 0;
-  ancho: 100%;
-  color de fondo: #808080;
-  acolchado: 10px;
-  texto alineado: centro;
-  color: #fff; 
-  fuente: 100% arial, sans-serif;
-}
-@media only screen and (max-width: 600px) {
- 
+@media only screen and (max-width: 767px) {
   body {
-      font-size: 14px; 
+    background-attachment: fixed; 
   }
 }
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #808080;
+  padding: 10px;
+  text-align: center;
+  color: #fff; 
+  font: 100% Arial, sans-serif;
+}
+@media only screen and (max-width: 767px) {
+  body {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800; 
+  }
+}
+
+body, button, input, select, textarea {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+}
+
+
+.btn {
+  font-family: 'Montserrat', sans-serif !important;
+  font-weight: 800 !important;
+}
+
+
