@@ -1,62 +1,68 @@
-body {
-  font-family: 'Arial Black', 'Arial', sans-serif;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  background: url('background.jpg') center/cover no-repeat; 
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+cuerpo {
+  familia tipográfica: 'Arial Negro', 'Arial', sans-serif;
+  margen: 0;
+  acolchado: 0;
+  tamaño caja: border-box;
+  fondo: url('antecedentes.jpg') centro/cubrir sin repetición; 
+  tamaño de fondo: 100% 100%;
+  antecedentes-repetir: sin repetición;
+  fondo adjunto: fijo;
 }
 
-.contenido {
-  text-align: center;
-  margin: 50px;
-  background-color: rgba(255, 255, 255, 0.4); 
-  padding: 20px;
-  border-radius: 10px;
-  padding: 20px;
+. .contenido {
+  texto alineado: centro;
+  margen: 50px;
+  color de fondo: rgba(255, 255, 255, 0,4); 
+  acolchado: 20px;
+  radio fronterizo: 10px;
+  acolchado: 20px;
   
 
 }
 
 h1 {
   color: #007bff;
-  font-weight: bold;
-  font-size: 2.5em;
+  tipografía: negrita;
+  tamaño fuente: 2.5em;
 }
 h2 {
   color: #833AB4;
-  font-weight: bold;
-  font-size: 2em;
+  tipografía: negrita;
+  tamaño fuente: 2em;
 }
 p {
   color: #833AB4;
-  font-size: 1.5em;
+  tamaño fuente: 1.5em;
 
 
 }
 p1 {
   color: #007bff;
-  font-size: 1.5em;
+  tamaño fuente: 1.5em;
 
 
 }
 
 
-@media only screen and (max-width: 767px) {
-  body {
-    background-attachment: fixed; 
+@medios sólo pantalla y (ancho máximo: 767px) {
+ cuerpo {
+    fondo adjunto: fijo; 
   }
 }
-.footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background-color: #808080;
-  padding: 10px;
-  text-align: center;
+. .pie de página {
+  posición: fijo;
+  abajo: 0;
+  izquierda: 0;
+  ancho: 100%;
+  color de fondo: #808080;
+  acolchado: 10px;
+  texto alineado: centro;
   color: #fff; 
-  font: 100% Arial, sans-serif;
+  fuente: 100% arial, sans-serif;
+}
+@media only screen and (max-width: 600px) {
+ 
+  body {
+      font-size: 14px; 
+  }
 }
