@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cumple Blanca Countdown</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(-45deg, #ff8a00, #e52e71, #1e90ff, #00d5e0);
+      background-size: 400% 400%;
+      animation: gradientAnimation 15s ease infinite;
+    }
+
+    @keyframes gradientAnimation {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    .container {
+      text-align: center;
+      color: #fff;
+      width: 100%;
+    }
+
+    .title {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      animation: fadeIn 2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .countdown {
+      display: flex;
+      justify-content: center;
+    }
+
+    .time {
+      font-size: 2em;
+      margin: 0 10px;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">Cumple Blanca Countdown</h1>
+    <div class="countdown">
+      <div id="days" class="time"></div>
+      <div id="hours" class="time"></div>
+      <div id="minutes" class="time"></div>
+      <div id="seconds" class="time"></div>
+    </div>
+  </div>
+
+  <script>
+    // Set the date we're counting down to
+    var countDownDate = new Date("Mar 23, 2024 00:00:00").getTime();
+
+    // Update the countdown every 1 second
+    var x = setInterval(function() {
+
+      // Get the current date and time
+      var now = new Date().getTime();
+
+      // Calculate the distance between now and the countdown date
+      var distance = countDownDate - now;
+
+      // Calculate days, hours, minutes, and seconds
+      var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      // Display the result
+      document.getElementById("days").innerHTML = days + "d ";
+      document.getElementById("hours").innerHTML = hours + "h ";
+      document.getElementById("minutes").innerHTML = minutes + "m ";
+      document.getElementById("seconds").innerHTML = seconds + "s ";
+
+      // If the countdown is over, display a message
+      if (distance < 0) {
+        clearInterval(x);
+        document.getElementById("days").innerHTML = "";
+        document.getElementById("hours").innerHTML = "";
+        document.getElementById("minutes").innerHTML = "";
+        document.getElementById("seconds").innerHTML = "";
+        document.querySelector(".countdown").innerHTML = "TERMINE! YA ES EL CUMPLE DE BLANCA!";
+      }
+    }, 1000);
+  </script>
+</body>
+</html>
