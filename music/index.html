@@ -1,1 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Reproductor de Música</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .player-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .song-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        .song-item {
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            transition: background-color 0.3s;
+        }
+        .song-item:hover {
+            background-color: #f8f9fa;
+        }
+        .song-item.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .current-song {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin: 15px 0;
+            color: #333;
+        }
+        .progress-container {
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="player-container">
+            <h1 class="text-center mb-4">🎵 Mi Música</h1>
+            
+            <div class="current-song" id="currentSong">
+                Selecciona una canción
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress">
+                    <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                    <small id="currentTime">0:00</small>
+                    <small id="duration">0:00</small>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-outline-primary" id="prevBtn">
+                    <i class="bi bi-skip-backward-fill"></i>
+                </button>
+                <button class="btn btn-success" id="playBtn">
+                    <i class="bi bi-play-fill"></i>
+                </button>
+                <button class="btn btn-warning" id="pauseBtn">
+                    <i class="bi bi-pause-fill"></i>
+                </button>
+                <button class="btn btn-outline-primary" id="nextBtn">
+                    <i class="bi bi-skip-forward-fill"></i>
+                </button>
+                <button class="btn btn-outline-info" id="shuffleBtn">
+                    <i class="bi bi-shuffle"></i>
+                </button>
+            </div>
 
+            <div class="song-list" id="songList">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando canciones...</span>
+                    </div>
+                    <p class="mt-2">Cargando canciones...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MusicPlayer {
+            constructor() {
+                this.songs = [];
+                this.currentSongIndex = 0;
+                this.audio = new Audio();
+                this.isPlaying = false;
+                this.isShuffle = false;
+                
+                this.initializePlayer();
+            }
+
+            async loadSongs() {
+                try {
+                    // Intentar leer la carpeta música localmente
+                    const response = await fetch('./musica/');
+                    if (!response.ok) {
+                        throw new Error('No se puede leer la carpeta música');
+                    }
+                    
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const html = parser.parseFromString(text, 'text/html');
+                    const links = html.querySelectorAll('a');
+                    
+                    this.songs = Array.from(links)
+                        .filter(link => link.href.endsWith('.mp3'))
+                        .map(link => {
+                            const fileName = link.href.split('/').pop();
+                            return {
+                                name: this.formatSongName(fileName.replace('.mp3', '')),
+                                file: `musica/${fileName}`
+                            };
+                        });
+
+                    if (this.songs.length === 0) {
+                        // Fallback: intentar cargar con un listado manual
+                        await this.loadSongsFallback();
+                    } else {
+                        this.renderSongList();
+                    }
+                    
+                } catch (error) {
+                    console.log('Usando método alternativo:', error);
+                    await this.loadSongsFallback();
+                }
+            }
+
+            async loadSongsFallback() {
+                // Método alternativo para desarrollo local
+                try {
+                    // Esta función intenta descubrir las canciones automáticamente
+                    // Para desarrollo, puedes agregar aquí algunos archivos de prueba
+                    const possibleSongs = [
+                        'cancion1.mp3',
+                        'cancion2.mp3',
+                        'musica.mp3',
+                        'song.mp3',
+                        'audio.mp3'
+                    ];
+                    
+                    for (const songFile of possibleSongs) {
+                        try {
+                            const testResponse = await fetch(`musica/${songFile}`);
+                            if (testResponse.ok) {
+                                this.songs.push({
+                                    name: this.formatSongName(songFile.replace('.mp3', '')),
+                                    file: `musica/${songFile}`
+                                });
+                            }
+                        } catch (e) {
+                            // Continuar con el siguiente archivo
+                        }
+                    }
+
+                    if (this.songs.length === 0) {
+                        // Último recurso: mostrar mensaje para agregar canciones
+                        this.showNoSongsMessage();
+                    } else {
+                        this.renderSongList();
+                    }
+                } catch (error) {
+                    this.showNoSongsMessage();
+                }
+            }
+
+            showNoSongsMessage() {
+                const songList = document.getElementById('songList');
+                songList.innerHTML = `
+                    <div class="alert alert-info text-center">
+                        <h5>No se encontraron canciones</h5>
+                        <p>Agrega archivos MP3 a la carpeta <strong>musica/</strong></p>
+                        <p>Los archivos aparecerán automáticamente aquí</p>
+                    </div>
+                `;
+            }
+
+            formatSongName(filename) {
+                return filename
+                    .replace(/_/g, ' ')
+                    .replace(/-/g, ' ')
+                    .replace(/\b\w/g, l => l.toUpperCase());
+            }
+
+            renderSongList() {
+                const songList = document.getElementById('songList');
+                songList.innerHTML = '';
+
+                this.songs.forEach((song, index) => {
+                    const songItem = document.createElement('div');
+                    songItem.className = `song-item ${index === this.currentSongIndex ? 'active' : ''}`;
+                    songItem.innerHTML = `
+                        <i class="bi bi-music-note-beamed me-2"></i> ${song.name}
+                    `;
+                    songItem.onclick = () => this.playSong(index);
+                    songList.appendChild(songItem);
+                });
+            }
+
+            playSong(index) {
+                this.currentSongIndex = index;
+                const song = this.songs[index];
+                
+                this.audio.src = song.file;
+                this.audio.play().catch(e => {
+                    console.error('Error reproduciendo:', e);
+                    alert('Error al reproducir la canción. Asegúrate de que el archivo existe en la carpeta musica/');
+                });
+                this.isPlaying = true;
+                
+                document.getElementById('currentSong').textContent = `🎵 ${song.name}`;
+                this.updatePlayButton();
+                this.renderSongList();
+                
+                // Configurar eventos de progreso
+                this.audio.ontimeupdate = () => this.updateProgress();
+                this.audio.onloadedmetadata = () => this.updateDuration();
+            }
+
+            updateProgress() {
+                const progressBar = document.getElementById('progressBar');
+                const currentTime = document.getElementById('currentTime');
+                
+                if (this.audio.duration) {
+                    const progress = (this.audio.currentTime / this.audio.duration) * 100;
+                    progressBar.style.width = `${progress}%`;
+                    currentTime.textContent = this.formatTime(this.audio.currentTime);
+                }
+            }
+
+            updateDuration() {
+                const duration = document.getElementById('duration');
+                duration.textContent = this.formatTime(this.audio.duration);
+            }
+
+            formatTime(seconds) {
+                if (isNaN(seconds)) return '0:00';
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            play() {
+                if (this.songs.length > 0 && this.audio.src) {
+                    this.audio.play();
+                    this.isPlaying = true;
+                    this.updatePlayButton();
+                } else if (this.songs.length > 0) {
+                    this.playSong(this.currentSongIndex);
+                }
+            }
+
+            pause() {
+                this.audio.pause();
+                this.isPlaying = false;
+                this.updatePlayButton();
+            }
+
+            next() {
+                if (this.songs.length === 0) return;
+                
+                if (this.isShuffle) {
+                    this.currentSongIndex = Math.floor(Math.random() * this.songs.length);
+                } else {
+                    this.currentSongIndex = (this.currentSongIndex + 1) % this.songs.length;
+                }
+                this.playSong(this.currentSongIndex);
+            }
+
+            previous() {
+                if (this.songs.length === 0) return;
+                
+                if (this.isShuffle) {
+                    this.currentSongIndex = Math.floor(Math.random() * this.songs.length);
+                } else {
+                    this.currentSongIndex = (this.currentSongIndex - 1 + this.songs.length) % this.songs.length;
+                }
+                this.playSong(this.currentSongIndex);
+            }
+
+            toggleShuffle() {
+                this.isShuffle = !this.isShuffle;
+                const shuffleBtn = document.getElementById('shuffleBtn');
+                shuffleBtn.classList.toggle('btn-info', this.isShuffle);
+                shuffleBtn.classList.toggle('btn-outline-info', !this.isShuffle);
+            }
+
+            updatePlayButton() {
+                const playBtn = document.getElementById('playBtn');
+                const pauseBtn = document.getElementById('pauseBtn');
+                
+                if (this.isPlaying) {
+                    playBtn.style.display = 'none';
+                    pauseBtn.style.display = 'inline-block';
+                } else {
+                    playBtn.style.display = 'inline-block';
+                    pauseBtn.style.display = 'none';
+                }
+            }
+
+            initializePlayer() {
+                // Configurar eventos de los botones
+                document.getElementById('playBtn').addEventListener('click', () => this.play());
+                document.getElementById('pauseBtn').addEventListener('click', () => this.pause());
+                document.getElementById('nextBtn').addEventListener('click', () => this.next());
+                document.getElementById('prevBtn').addEventListener('click', () => this.previous());
+                document.getElementById('shuffleBtn').addEventListener('click', () => this.toggleShuffle());
+
+                // Configurar evento cuando termina una canción
+                this.audio.addEventListener('ended', () => this.next());
+
+                // Cargar canciones al iniciar
+                this.loadSongs();
+                
+                // Ocultar botón de pausa inicialmente
+                document.getElementById('pauseBtn').style.display = 'none';
+            }
+        }
+
+        // Inicializar el reproductor cuando se carga la página
+        document.addEventListener('DOMContentLoaded', () => {
+            new MusicPlayer();
+        });
+    </script>
+</body>
+</html>
