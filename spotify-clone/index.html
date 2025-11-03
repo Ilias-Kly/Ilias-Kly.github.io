@@ -1115,48 +1115,52 @@
 div>
                 </section>
             </main>
-        </div>
+        <//* === HERO SECTION === */
+.hero-section h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
 
-        <!-- Player Bar -->
-        <div class="player-bar">
-            <div class="now-playing">
-                <div class="track-info">
-                           <!-- Player Bar -->
-        <div class="player-bar">
-            <div class="now-playing">
-                <div class="track-info">
- <div class="track-image"></div>
-                    <div class="track-details">
-                        <div class="track-name">No hay canción seleccionada</div                    <div class="track-image"></div>
-                    <div class="track-details">
-                        <div class="track-name">No hay canción seleccionada</>
-                        <div class="track-artist">Seleccionadiv>
-                        <div class="track-artist">Selecciona una canción para reproducir</div>
-                    </div>
-                    <button class="like-btn"><i class="bi bi-heart"></i></button>
- una canción para reproducir</div>
-                    </div>
-                    <button class="like-btn"><i class="bi bi-heart"></i></button>
-                                       <button class="expand-player-btn"><i class="bi bi-chevron-up"></i></button>
-                </div>
+.quick-play-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 30px;
+}
 
-                <div class="player-controls <button class="expand-player-btn"><i class="bi bi-chevron-up"></i></button>
-                </div>
+.quick-play-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
 
-                <div class="player-controls-m-mobile">
-                    <button class="control-btn-mobile" id="shuffleBtn"><i class="bi bi-shuffle"></i></button>
-obile">
-                    <button class="control-btn-mobile" id="shuffleBtn"><i class="bi bi-shuffle"></i></button>
-                    <button class="control-btn-mobile" id="prevBtn"><i class="bi bi-skip-start-f                    <button class="control-btn-mobile" id="prevBtn"><i class="bi bi-skip-start-fill"></i></button>
-                    <button class="play-btnill"></i></button>
-                    <button class="play-btn-mobile" id="playBtn"><i class="bi bi-play-fill"></i></button>
-                    <button class="control-mobile" id="playBtn"><i class="bi bi-play-fill"></i></button>
-                    <button class="control-btn-mobile" id="nextBtn"><i class="bi bi-skip-end-fill"></i></button>
-                    <button class="control-btn-mobile-btn-mobile" id="nextBtn"><i class="bi bi-skip-end-fill"></i></button>
-                    <button class="control-btn-m" id="repeatBtn"><i class="bi bi-repeat"></i></button>
-                </div>
-            </div>
-        </div>
+.quick-play-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.card-icon {
+    font-size: 24px;
+    background: linear-gradient(135deg, #450af5, #c4efd9);
+    border-radius: 4px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.card-text {
+    font-weight: 600;
+    font-size: 16px;
+}
 
         <!-- Player Expandido (Móvil) -->
         <div class="player-expanded">
