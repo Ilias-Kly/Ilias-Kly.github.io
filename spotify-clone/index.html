@@ -277,7 +277,7 @@ class MusicApp {
     }
 
     init() {
-        console.log("🎵 Iniciando YouTube ReVanced MULTI-API...");
+        console.log("🎵 Iniciando YouTube ReVanced OFFICIAL API...");
         this.setupEventListeners();
         this.loadPlaylist();
     }
@@ -295,47 +295,79 @@ class MusicApp {
 
         this.showLoading();
         
-        // LISTA DE APIs REVANCED ALTERNATIVAS
-        const apis = [
+        try {
+            // API OFICIAL DE REVANCED 🚀
+            const results = await this.searchReVancedOfficial(query);
+            this.displaySearchResults(results);
+            this.showMessage(`✅ ${results.length} canciones encontradas via ReVanced`);
+        } catch (error) {
+            console.error('Error ReVanced:', error);
+            this.showMessage('❌ ReVanced caído. Probando alternativas...');
+            await this.searchBackupAPIs(query);
+        }
+    }
+
+    async searchReVancedOfficial(query) {
+        // API OFICIAL DE REVANCED - SIN ANUNCIOS
+        const searchUrl = `https://api.revanced.app/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
+        
+        console.log(`🚀 Buscando en ReVanced Official: ${searchUrl}`);
+        
+        const response = await fetch(searchUrl);
+        if (!response.ok) throw new Error('ReVanced API no respondió');
+        
+        const data = await response.json();
+        console.log('📦 Resultados ReVanced:', data.length);
+        
+        // Procesar resultados de ReVanced
+        return data
+            .filter(item => item.type === 'video' && item.duration > 60)
+            .slice(0, 15)
+            .map(item => ({
+                id: item.videoId,
+                title: item.title,
+                artist: item.author,
+                thumbnail: item.thumbnails?.medium?.url || item.thumbnails?.[0]?.url,
+                duration: this.formatDuration(item.duration),
+                views: item.viewCount
+            }));
+    }
+
+    async searchBackupAPIs(query) {
+        // APIs de respaldo por si ReVanced falla
+        const backupAPIs = [
             'https://pipedapi.kavin.rocks',
             'https://pipedapi-libre.kavin.rocks',
-            'https://pipedapi.moomoo.me', 
-            'https://ytapi.deno.dev',
-            'https://yt.lemnoslife.com'
+            'https://ytapi.deno.dev'
         ];
 
-        // INTENTAR CON CADA API HASTA QUE UNA FUNCIONE
-        for (const apiBase of apis) {
+        for (const apiBase of backupAPIs) {
             try {
-                console.log(`🔧 Probando API: ${apiBase}`);
-                const results = await this.trySearchAPI(apiBase, query);
+                console.log(`🔧 Probando backup: ${apiBase}`);
+                const results = await this.searchWithAPI(apiBase, query);
                 this.displaySearchResults(results);
                 this.showMessage(`✅ Conectado via ${apiBase.split('//')[1]}`);
-                return; // ¡ÉXITO! Salir del bucle
+                return;
             } catch (error) {
-                console.log(`❌ Falló: ${apiBase}`);
-                continue; // Intentar siguiente API
+                console.log(`❌ Backup falló: ${apiBase}`);
+                continue;
             }
         }
         
-        // SI TODAS FALLAN
-        this.showMessage('🎵 Usando búsqueda local de emergencia');
+        // Último recurso
+        this.showMessage('🎵 Usando búsqueda local');
         this.showLocalResults(query);
     }
 
-    async trySearchAPI(apiBase, query) {
-        let searchUrl, data;
-        
+    async searchWithAPI(apiBase, query) {
         if (apiBase.includes('piped')) {
-            // API PIPED
-            searchUrl = `${apiBase}/search?q=${encodeURIComponent(query)}&filter=music`;
+            const searchUrl = `${apiBase}/search?q=${encodeURIComponent(query)}&filter=music`;
             const response = await fetch(searchUrl);
-            if (!response.ok) throw new Error('API no respondió');
-            data = await response.json();
+            const data = await response.json();
             
             return data.items
                 .filter(item => item.type === 'stream')
-                .slice(0, 15)
+                .slice(0, 12)
                 .map(item => ({
                     id: item.url.split('/').pop(),
                     title: item.title,
@@ -344,11 +376,9 @@ class MusicApp {
                     duration: this.formatDuration(item.duration)
                 }));
         } else {
-            // API YOUTUBE ALTERNATIVA
-            searchUrl = `${apiBase}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
+            const searchUrl = `${apiBase}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
             const response = await fetch(searchUrl);
-            if (!response.ok) throw new Error('API no respondió');
-            data = await response.json();
+            const data = await response.json();
             
             return data
                 .filter(item => item.type === 'video')
@@ -385,48 +415,74 @@ class MusicApp {
                 </button>
             </div>
         `).join('');
-
-        this.showMessage(`✅ ${results.length} canciones encontradas`);
     }
 
     async playSong(videoId, title, artist) {
-        console.log(`🎵 Reproduciendo: ${title}`);
+        console.log(`🎵 Reproduciendo via ReVanced: ${title}`);
         
         this.currentTrack = { id: videoId, title, artist };
         this.updatePlayer();
         
         try {
-            // STREAM DIRECTO SIN ANUNCIOS
-            const audioUrl = await this.getAudioStream(videoId);
+            // STREAM DIRECTO CON REVANCED 🚀
+            const audioUrl = await this.getReVancedAudio(videoId);
             this.audioPlayer.src = audioUrl;
             this.audioPlayer.play();
             this.isPlaying = true;
             this.updatePlayButton();
             this.showMessage(`🎵 Reproduciendo: ${title}`);
         } catch (error) {
-            this.showMessage('❌ Error al reproducir');
+            console.error('Error reproducción:', error);
+            this.showMessage('❌ Error al reproducir. Probando alternativas...');
+            await this.playWithBackup(videoId, title, artist);
         }
     }
 
-    async getAudioStream(videoId) {
-        // Múltiples fuentes de audio
-        const apis = [
+    async getReVancedAudio(videoId) {
+        // API OFICIAL DE REVANCED PARA AUDIO
+        const streamUrl = `https://api.revanced.app/api/v1/videos/${videoId}`;
+        
+        console.log(`🎵 Obteniendo audio ReVanced: ${streamUrl}`);
+        
+        const response = await fetch(streamUrl);
+        if (!response.ok) throw new Error('ReVanced audio falló');
+        
+        const data = await response.json();
+        
+        // ReVanced devuelve streams de audio sin anuncios
+        const audioStream = data.audioStreams?.[0] || data.formatStreams?.[0];
+        if (!audioStream) throw new Error('No hay stream de audio');
+        
+        return audioStream.url;
+    }
+
+    async playWithBackup(videoId, title, artist) {
+        // Backups de audio
+        const backupAPIs = [
             `https://pipedapi.kavin.rocks/streams/${videoId}`,
             `https://pipedapi-libre.kavin.rocks/streams/${videoId}`,
             `https://ytapi.deno.dev/api/v1/videos/${videoId}`
         ];
 
-        for (const api of apis) {
+        for (const api of backupAPIs) {
             try {
                 const response = await fetch(api);
                 const data = await response.json();
                 const audioUrl = data.audioStreams?.[0]?.url || data.formatStreams?.[0]?.url;
-                if (audioUrl) return audioUrl;
+                if (audioUrl) {
+                    this.audioPlayer.src = audioUrl;
+                    this.audioPlayer.play();
+                    this.isPlaying = true;
+                    this.updatePlayButton();
+                    this.showMessage(`🎵 Reproduciendo via backup: ${title}`);
+                    return;
+                }
             } catch (error) {
                 continue;
             }
         }
-        throw new Error('No se pudo obtener audio');
+        
+        this.showMessage('❌ No se pudo reproducir en ningún servidor');
     }
 
     togglePlay() {
@@ -447,6 +503,7 @@ class MusicApp {
         this.audioPlayer.currentTime = 0;
         this.isPlaying = false;
         this.updatePlayButton();
+        this.showMessage('⏹️ Detenido');
     }
 
     updatePlayButton() {
@@ -459,6 +516,8 @@ class MusicApp {
             this.playlist.push(song);
             this.savePlaylist();
             this.showMessage(`✅ "${this.cleanTitle(song.title)}" añadida`);
+        } else {
+            this.showMessage('⚠️ Ya está en la playlist');
         }
     }
 
@@ -487,6 +546,7 @@ class MusicApp {
         this.playlist = this.playlist.filter(song => song.id !== songId);
         this.savePlaylist();
         this.loadPlaylist();
+        this.showMessage('🗑️ Canción eliminada');
     }
 
     savePlaylist() {
@@ -512,7 +572,7 @@ class MusicApp {
         document.getElementById('search-results').innerHTML = `
             <div class="loading">
                 <div>🎵</div>
-                <p>Buscando en YouTube ReVanced...</p>
+                <p>Buscando en YouTube ReVanced Official...</p>
             </div>
         `;
     }
@@ -532,25 +592,11 @@ class MusicApp {
                 thumbnail: 'https://img.youtube.com/vi/CY8E6N5Nzec/mqdefault.jpg'
             },
             {
-                id: 'jVrA-6d5jtQ',
-                title: 'Bad Bunny - Where She Goes',
-                artist: 'Bad Bunny', 
-                duration: '3:51',
-                thumbnail: 'https://img.youtube.com/vi/jVrA-6d5jtQ/mqdefault.jpg'
-            },
-            {
                 id: 'JGwWNGJdvx8',
                 title: 'Ed Sheeran - Shape of You',
                 artist: 'Ed Sheeran',
                 duration: '3:53',
                 thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg'
-            },
-            {
-                id: 'kJQP7kiw5Fk',
-                title: 'Luis Fonsi - Despacito ft. Daddy Yankee',
-                artist: 'Luis Fonsi',
-                duration: '3:59',
-                thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg'
             },
             {
                 id: '5gsL_7x9VUE',
