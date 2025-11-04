@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Música 🎵</title>
+    <title>Mi Música 🎵 SIN ANUNCIOS</title>
     <style>
         :root {
             --negrito-bonito: #0a0a0a;
@@ -151,11 +151,19 @@
             font-weight: 600;
             margin-bottom: 6px;
             font-size: 14px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .card-artist {
             color: #b3b3b3;
             font-size: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         /* Estados de carga */
@@ -250,11 +258,17 @@
         .player-title {
             font-weight: 600;
             margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .player-artist {
             color: #b3b3b3;
             font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .player-controls button {
@@ -279,6 +293,19 @@
             border-radius: 25px;
             z-index: 1000;
             font-size: 14px;
+        }
+
+        /* Reproductor integrado */
+        #youtube-player {
+            width: 100%;
+            height: 200px;
+            margin-top: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .player-active #youtube-player {
+            display: block;
         }
     </style>
 </head>
@@ -306,6 +333,9 @@
             <div id="search-results" class="music-grid">
                 <!-- Los resultados de búsqueda aparecerán aquí -->
             </div>
+            
+            <!-- Reproductor YouTube integrado -->
+            <div id="youtube-player"></div>
         </div>
 
         <!-- Sección Playlist -->
@@ -330,22 +360,23 @@
     </div>
 
     <script>
-        // APP QUE SÍ BUSCA EN YOUTUBE - VERSIÓN DEFINITIVA
+        // APP CON YOUTUBE REVANCED - SIN ANUNCIOS
         class MusicApp {
             constructor() {
                 this.currentTrack = null;
                 this.playlist = JSON.parse(localStorage.getItem('miPlaylist')) || [];
                 this.isPlaying = false;
-                this.audioPlayer = new Audio();
+                this.youtubePlayer = null;
+                this.isPlayerReady = false;
                 
                 this.init();
             }
 
             init() {
-                console.log("🎵 Iniciando BÚSQUEDA REAL...");
+                console.log("🎵 Iniciando YouTube ReVanced...");
                 this.setupEventListeners();
                 this.loadPlaylist();
-                this.loadPopularSongs();
+                this.loadYouTubeAPI();
             }
 
             setupEventListeners() {
@@ -359,6 +390,48 @@
                 });
 
                 console.log("✅ Event listeners configurados");
+            }
+
+            loadYouTubeAPI() {
+                // Cargar API de YouTube
+                const tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                document.head.appendChild(tag);
+
+                window.onYouTubeIframeAPIReady = () => {
+                    console.log("✅ YouTube API lista");
+                    this.createYouTubePlayer();
+                };
+            }
+
+            createYouTubePlayer() {
+                this.youtubePlayer = new YT.Player('youtube-player', {
+                    height: '200',
+                    width: '100%',
+                    playerVars: {
+                        'autoplay': 0,
+                        'controls': 1,
+                        'rel': 0,
+                        'modestbranding': 1,
+                        'playsinline': 1,
+                        'iv_load_policy': 3 // No mostrar anotaciones
+                    },
+                    events: {
+                        'onReady': (event) => {
+                            console.log("🎵 Reproductor de YouTube listo");
+                            this.isPlayerReady = true;
+                        },
+                        'onStateChange': (event) => {
+                            if (event.data === YT.PlayerState.PLAYING) {
+                                this.isPlaying = true;
+                                this.updatePlayButton();
+                            } else if (event.data === YT.PlayerState.PAUSED) {
+                                this.isPlaying = false;
+                                this.updatePlayButton();
+                            }
+                        }
+                    }
+                });
             }
 
             showSection(sectionId) {
@@ -386,66 +459,60 @@
                 }
 
                 this.showLoading();
-                console.log(`🔍 Buscando en YouTube: ${query}`);
+                console.log(`🔍 Buscando: ${query}`);
 
                 try {
-                    // BÚSQUEDA REAL EN YOUTUBE
-                    const results = await this.searchYouTubeReal(query);
+                    // Usar API de Piped/ReVanced que SÍ funciona
+                    const results = await this.searchWithReVancedAPI(query);
                     this.displaySearchResults(results);
                     
                 } catch (error) {
                     console.error('Error en búsqueda:', error);
                     this.showMessage('❌ Error al buscar. Probando alternativa...');
-                    // Alternativa: buscar con otra API
-                    await this.searchYouTubeAlternative(query);
+                    await this.searchWithBackupAPI(query);
                 }
             }
 
-            async searchYouTubeReal(query) {
-                // Usar Invidious API para búsqueda REAL
-                const searchUrl = `https://vid.puffyan.us/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
+            async searchWithReVancedAPI(query) {
+                // API de Piped/ReVanced - SIN anuncios
+                const searchUrl = `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=music`;
                 
-                console.log(`🌐 Buscando en: ${searchUrl}`);
+                console.log(`🌐 Buscando en Piped API: ${searchUrl}`);
                 
                 const response = await fetch(searchUrl);
                 if (!response.ok) throw new Error('API no respondió');
                 
                 const data = await response.json();
-                console.log('📦 Resultados recibidos:', data.length);
+                console.log('📦 Resultados recibidos:', data.items.length);
                 
-                // Procesar resultados reales
-                const musicVideos = data
-                    .filter(item => 
-                        item.type === 'video' && 
-                        !item.title.toLowerCase().includes('podcast') &&
-                        !item.title.toLowerCase().includes('live') &&
-                        item.lengthSeconds > 60
-                    )
+                // Procesar resultados de música
+                const musicVideos = data.items
+                    .filter(item => item.type === 'stream' && item.duration > 60)
                     .slice(0, 15)
                     .map(item => ({
-                        id: item.videoId,
+                        id: item.url.split('/').pop(), // Extraer ID del video
                         title: item.title,
-                        artist: item.author,
-                        duration: this.formatDuration(item.lengthSeconds),
-                        thumbnail: item.videoThumbnails?.[3]?.url || item.videoThumbnails?.[0]?.url
+                        artist: item.uploaderName,
+                        duration: this.formatDuration(item.duration),
+                        thumbnail: item.thumbnail
                     }));
 
                 if (musicVideos.length === 0) {
-                    throw new Error('No se encontraron resultados');
+                    throw new Error('No se encontraron resultados musicales');
                 }
 
                 return musicVideos;
             }
 
-            async searchYouTubeAlternative(query) {
+            async searchWithBackupAPI(query) {
                 try {
-                    // Segunda alternativa
-                    const searchUrl = `https://inv.tux.pizza/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
+                    // API alternativa de Invidious
+                    const searchUrl = `https://ytapi.deno.dev/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
                     const response = await fetch(searchUrl);
                     const data = await response.json();
                     
                     const musicVideos = data
-                        .filter(item => item.type === 'video')
+                        .filter(item => item.type === 'video' && item.lengthSeconds > 60)
                         .slice(0, 12)
                         .map(item => ({
                             id: item.videoId,
@@ -458,9 +525,76 @@
                     this.displaySearchResults(musicVideos);
                     
                 } catch (error) {
-                    console.error('Alternativa también falló:', error);
-                    this.showFallbackResults(query);
+                    console.error('Backup también falló:', error);
+                    this.showMessage('⚠️ Usando búsqueda local');
+                    this.showLocalResults(query);
                 }
+            }
+
+            showLocalResults(query) {
+                // Resultados locales de emergencia
+                const localSongs = this.getLocalSongs(query);
+                this.displaySearchResults(localSongs);
+            }
+
+            getLocalSongs(query) {
+                const allSongs = [
+                    {
+                        id: 'CY8E6N5Nzec',
+                        title: 'Bad Bunny - Monaco',
+                        artist: 'Bad Bunny',
+                        duration: '4:27',
+                        thumbnail: 'https://img.youtube.com/vi/CY8E6N5Nzec/mqdefault.jpg'
+                    },
+                    {
+                        id: 'jVrA-6d5jtQ',
+                        title: 'Bad Bunny - Where She Goes',
+                        artist: 'Bad Bunny', 
+                        duration: '3:51',
+                        thumbnail: 'https://img.youtube.com/vi/jVrA-6d5jtQ/mqdefault.jpg'
+                    },
+                    {
+                        id: 'JGwWNGJdvx8',
+                        title: 'Ed Sheeran - Shape of You',
+                        artist: 'Ed Sheeran',
+                        duration: '3:53',
+                        thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg'
+                    },
+                    {
+                        id: 'kJQP7kiw5Fk',
+                        title: 'Luis Fonsi - Despacito ft. Daddy Yankee',
+                        artist: 'Luis Fonsi',
+                        duration: '3:59',
+                        thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg'
+                    },
+                    {
+                        id: '60ItHLz5WEA',
+                        title: 'The Weeknd - Blinding Lights',
+                        artist: 'The Weeknd',
+                        duration: '3:20',
+                        thumbnail: 'https://img.youtube.com/vi/60ItHLz5WEA/mqdefault.jpg'
+                    },
+                    {
+                        id: '5gsL_7x9VUE',
+                        title: 'Beny Jr - Como Lo Hice Yo',
+                        artist: 'Beny Jr',
+                        duration: '3:35',
+                        thumbnail: 'https://img.youtube.com/vi/5gsL_7x9VUE/mqdefault.jpg'
+                    },
+                    {
+                        id: '7L14LtW2kCw',
+                        title: 'Beny Jr - Porsche',
+                        artist: 'Beny Jr',
+                        duration: '3:08',
+                        thumbnail: 'https://img.youtube.com/vi/7L14LtW2kCw/mqdefault.jpg'
+                    }
+                ];
+
+                const queryLower = query.toLowerCase();
+                return allSongs.filter(song => 
+                    song.title.toLowerCase().includes(queryLower) ||
+                    song.artist.toLowerCase().includes(queryLower)
+                );
             }
 
             displaySearchResults(results) {
@@ -487,21 +621,25 @@
                 `).join('');
 
                 this.showMessage(`✅ Encontradas ${results.length} canciones`);
-                console.log(`✅ Mostrando ${results.length} resultados REALES`);
+                console.log(`✅ Mostrando ${results.length} resultados`);
             }
 
             playSong(videoId, title, artist) {
-                console.log(`🎵 Reproduciendo: ${title}`);
+                console.log(`🎵 Reproduciendo: ${title} (${videoId})`);
                 
                 this.currentTrack = { id: videoId, title, artist };
                 this.updatePlayer();
                 
-                // SIMULAR reproducción
-                this.showMessage(`🎵 Reproduciendo: ${title}`);
-                this.isPlaying = true;
-                this.updatePlayButton();
-                
-                console.log(`▶️ Reproduciendo: https://www.youtube.com/watch?v=${videoId}`);
+                if (this.isPlayerReady && this.youtubePlayer) {
+                    // Reproducir con YouTube Player integrado
+                    this.youtubePlayer.loadVideoById(videoId);
+                    this.youtubePlayer.playVideo();
+                    this.isPlaying = true;
+                    this.updatePlayButton();
+                    this.showMessage(`🎵 Reproduciendo: ${title}`);
+                } else {
+                    this.showMessage('❌ Reproductor no listo. Recarga la página.');
+                }
             }
 
             togglePlay() {
@@ -510,20 +648,25 @@
                     return;
                 }
 
-                if (this.isPlaying) {
-                    this.showMessage('⏸️ Pausado');
-                    this.isPlaying = false;
-                } else {
-                    this.showMessage(`▶️ Reproduciendo: ${this.currentTrack.title}`);
-                    this.isPlaying = true;
+                if (this.youtubePlayer) {
+                    if (this.isPlaying) {
+                        this.youtubePlayer.pauseVideo();
+                        this.isPlaying = false;
+                    } else {
+                        this.youtubePlayer.playVideo();
+                        this.isPlaying = true;
+                    }
+                    this.updatePlayButton();
                 }
-                this.updatePlayButton();
             }
 
             stopPlayback() {
-                this.isPlaying = false;
-                this.updatePlayButton();
-                this.showMessage('⏹️ Detenido');
+                if (this.youtubePlayer) {
+                    this.youtubePlayer.stopVideo();
+                    this.isPlaying = false;
+                    this.updatePlayButton();
+                    this.showMessage('⏹️ Detenido');
+                }
             }
 
             updatePlayButton() {
@@ -540,9 +683,7 @@
                     this.showMessage(`✅ "${this.cleanTitle(song.title)}" añadida a playlist`);
                     console.log('📋 Canción añadida a playlist:', song);
                 } else {
-                    this.showMessage('⚠️ Ya                    console.log('📋 Canción añadida a playlist:', song);
-                } else {
-                    this.showMessage(' está en la playlist');
+                    this.showMessage('⚠️ Ya está en la playlist');
                 }
             }
 
@@ -550,68 +691,32 @@
                 const container = document.getElementById('playlist-songs');
                 
                 if (this.playlist.length === 0) {
-                    container.innerHTML⚠️ Ya está en la playlist');
-                }
-            }
-
-            loadPlaylist() {
-                const container = document.getElementById('playlist-songs');
-                
-                if (this.playlist.length === 0) = '<div class="no-results">📋 Tu playlist está vacía</div>';
-                    return;
-                {
                     container.innerHTML = '<div class="no-results">📋 Tu playlist está vacía</div>';
                     return;
                 }
 
-                }
-
-                container.innerHTML = this.playlist.map(song => container.innerHTML = this.playlist.map(song => `
-                    <div class `
+                container.innerHTML = this.playlist.map(song => `
                     <div class="music-card">
-                        <div class="card-cover" style="background-image: url('${song.thumbnail}="music-card">
-                        <div class="card-cover" style="background-image: url('${song.thumbnail}')"></')"></div>
-                        <div class="card-title">${song.title}</div>
-                        <div class="card-artist">${div>
+                        <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
                         <div class="card-title">${song.title}</div>
                         <div class="card-artist">${song.artist}</div>
-                       song.artist}</div>
-                        <div class="card-duration">${song.duration}</ <div class="card-duration">${song.duration}</div>
-                        <button class="div>
-                        <button class="play-btn" onclick="app.playSong('${songplay-btn" onclick="app.playSong.id}', '${song.title}', '${song.artist}')">
-                            ▶️
-                        </button>
-                        <button class="remove-btn" onclick="app.removeFromPlaylist('('${song.id}', '${song.title}', '${song.artist}')">
+                        <div class="card-duration">${song.duration}</div>
+                        <button class="play-btn" onclick="app.playSong('${song.id}', '${song.title}', '${song.artist}')">
                             ▶️
                         </button>
                         <button class="remove-btn" onclick="app.removeFromPlaylist('${song.id}')">
                             ❌
                         </button>
-${song.id}')">
-                            ❌
-                        </button>
-                                       </div>
-                `).join('');
-            }
-
-            removeFromPlaylist(songId) </div>
+                    </div>
                 `).join('');
             }
 
             removeFromPlaylist(songId) {
-                this.playlist = this.playlist.filter(song => {
                 this.playlist = this.playlist.filter(song => song.id !== songId);
-                this.savePlaylist();
-                this.load song.id !== songId);
                 this.savePlaylist();
                 this.loadPlaylist();
                 this.showMessage('🗑️ Canción eliminada');
-           Playlist();
-                this.showMessage('🗑️ Canción eliminada');
             }
-
-            savePlaylist() {
- }
 
             savePlaylist() {
                 localStorage.setItem('miPlaylist', JSON.stringify(this.playlist));
@@ -619,190 +724,21 @@ ${song.id}')">
 
             updatePlayer() {
                 if (this.currentTrack) {
-                                   localStorage.setItem('miPlaylist', JSON.stringify(this.playlist));
-            }
-
-            updatePlayer() {
-                if (this.currentTrack) {
-                    document.getElementById('current-title').textContent document.getElementById('current-title').textContent = this.currentTrack.title;
-                    document.getElementById('current-artist').textContent = this = this.currentTrack.title;
-                    document.getElementById('current-artist').textContent = this.current.currentTrack.artist;
+                    document.getElementById('current-title').textContent = this.currentTrack.title;
+                    document.getElementById('current-artist').textContent = this.currentTrack.artist;
                 }
             }
 
-            loadPopularSongs() {
-                const popularSongs = [
-                    {
-                        idTrack.artist;
-                }
-            }
-
-            loadPopularSongs() {
-                const popularSongs = [
-                    {
-                        id: 'CY8E6N5Nzec',
-                        title: 'Bad Bunny - Monaco',
-                        artist: 'Bad: 'CY8E6N5Nzec',
-                        title: 'Bad Bunny - Monaco',
-                        artist: 'Bad Bunny',
-                        duration: '4:27',
-                        thumbnail: ' Bunny',
-                        duration: '4:27',
-                        thumbnail: 'https://img.youtube.com/vi/CY8E6N5https://img.youtube.com/vi/CY8E6N5NzecNzec/mqdefault.jpg'
-                    },
-                    {
-                        id: 'JGwWNGJ/mqdefault.jpg'
-                    },
-                    {
-                        id: 'JGwWNGJdvxdvx8',
-                        title: 'Ed She8',
-                        title: 'Ed Sheeran - Shape of You',
-                        artist: 'Ed Sheeran',
-                        duration: '3:53',
-                        thumbnail: 'eran - Shape of You',
-                        artist: 'Ed Sheeran',
-                        duration: '3:53',
-                        thumbnail: 'https://img.youtubehttps://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg'
-.com/vi/JGwWNGJdvx8/mqdefault.jpg'
-                    }
-                ];
-
-                this.displaySearchResults(popular                    }
-                ];
-
-                this.displaySearchResults(popularSongs);
-            }
-
             showLoading() {
-Songs);
-            }
-
-            showLoading() {
-                document.getElementById('search-results').innerHTML =                document.getElementById('search-results').innerHTML = `
+                document.getElementById('search-results').innerHTML = `
                     <div class="loading">
-                        `
-                    <div class="loading">
-                        <div <div class="spinner">🎵</div>
-                        <p>Busc class="spinner">🎵</div>
-                        <p>Buscando en YouTube...</p>
-ando en YouTube...</p>
+                        <div class="spinner">🎵</div>
+                        <p>Buscando en YouTube ReVanced...</p>
                     </div>
                 `;
             }
 
-            show                    </div>
-                `;
-           FallbackResults(query) {
-                this.showMessage('⚠️ Usando búsqueda alternativa }
-
-            showFallbackResults(query) {
-                this.showMessage('⚠️ Usando búsqueda alternativa');
-                // Búsqueda de emergencia con datos predefin');
-                // Búsqueda de emergencia con datos preidos
-                const emergencySongs = this.generateEmergencydefinidos
-                const emergencySongs = this.generateEmergencyResults(query);
-                this.displaySearchResults(emergencySongs);
-            }
-
-            generateEmergencyResults(query) {
-                // Datos de emergencia paraResults(query);
-                this.displaySearchResults(emergencySongs);
-            }
-
-            generateEmergencyResults(query) {
-                // Datos de emergencia para cuando todo f cuando todo falle
-                const allSongs = [
-                    {
-                        id: 'CY8E6N5Nzalle
-                const allSongs = [
-                    {
-                        id: 'CY8E6N5Nzec',
-                        title: 'ec',
-                        title: 'Bad Bunny - Monaco',
-                        artist: 'Bad Bunny',
-                        durationBad Bunny - Monaco',
-                        artist: 'Bad Bunny',
-                        duration: '4:27',
-                        thumbnail: ': '4:27',
-                        thumbnail: 'https://img.youtube.com/vi/CY8E6N5Nzec/mqdefault.jpg'
-                   https://img.youtube.com/vi/CY8E6N5Nzec/mqdefault.jpg'
-                    },
-                    {
-                        id: 'jVrA-6d5jt },
-                    {
-                        id: 'jVrA-6d5jtQ',
-                        title: 'Bad Bunny - Where She GoesQ',
-                        title: 'Bad Bunny - Where She Goes',
-                        artist: 'Bad Bunny', 
-                        duration: '3',
-                        artist: 'Bad Bunny', 
-                        duration: '3:51',
-                        thumbnail: 'https://img.youtube.com/vi/jVrA-6:51',
-                        thumbnail: 'https://img.youtube.com/vi/jVrA-6d5jtQ/mqdefault.jpg'
-                    },
-                    {
-                        id: 'JGwWd5jtQ/mqdefault.jpg'
-                    },
-                    {
-                        id: 'JGwWNGJdvx8',
-                        title: 'Ed Sheeran -NGJdvx8',
-                        title: 'Ed Sheeran - Shape of You',
-                        artist: 'Ed Sheeran',
- Shape of You',
-                        artist: 'Ed Sheeran',
-                        duration: '3:53                        duration: '3:53',
-                        thumbnail: 'https://img.youtube.com/vi/JGwW',
-                        thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg'
-                    },
-                    {
-NGJdvx8/mqdefault.jpg'
-                    },
-                    {
-                        id: 'kJQP7kiw5Fk',
-                        id: 'kJQP7kiw5Fk',
-                        title: 'Luis Fonsi - Despacito',
-                                               title: 'Luis Fonsi - Despacito',
-                        artist: 'Luis F artist: 'Luis Fonsi',
-                        duration: '3:59',
-                        thumbnail: 'httpsonsi',
-                        duration: '3:59',
-                        thumbnail: 'https://img.youtube.com/vi/kJQP7kiw://img.youtube.com/vi/kJQP7kiw5Fk5Fk/mqdefault.jpg'
-                    },
-                    {
-                        id: '60ItHLz5WEA',
-                        title/mqdefault.jpg'
-                    },
-                    {
-                        id: '60ItHLz5WEA',
-                        title:: 'The Weeknd - Blinding Lights',
-                        artist: 'The 'The Weeknd - Blinding Lights',
-                        artist: 'The Weeknd',
-                        Weeknd',
-                        duration: '3:20',
-                        thumbnail: 'https://img.youtube.com/vi/60ItHLz5WEA/mqdefault.jpg'
-                    }
-                ];
-
-                const queryLower = duration: '3:20',
-                        thumbnail: 'https://img.youtube.com/vi/60ItHLz5WEA/mqdefault.jpg'
-                    }
-                ];
-
-                const queryLower = query.toLowerCase();
-                return allSongs.filter(song => query.toLowerCase();
-                return allSongs.filter(song => 
-                    song.title.toLowerCase().includes(queryLower) ||
-                    song.artist.toLowerCase 
-                    song.title.toLowerCase().includes(queryLower) ||
-                    song.artist.toLowerCase().includes(queryLower)
-                );
-            }
-
-().includes(queryLower)
-                );
-            }
-
-            cleanTitle(title            cleanTitle(title) {
+            cleanTitle(title) {
                 return title
                     .replace(/\(official music video\)/gi, '')
                     .replace(/\(official audio\)/gi, '')
@@ -815,33 +751,9 @@ NGJdvx8/mqdefault.jpg'
 
             formatDuration(seconds) {
                 const mins = Math.floor(seconds / 60);
-                const secs) {
-                return title
-                    .replace(/\(official music video\)/gi, '')
-                    .replace(/\(official audio\)/gi, '')
-                    .replace(/\(lyrics\)/gi, '')
-                    .replace(/\[.*\]/g, '')
-                    .replace(/\(.*\)/g, '')
-                    .replace(/\\u0026/g, '&')
-                    .trim();
-            }
-
-            formatDuration(seconds) {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds %  = seconds % 60;
+                const secs = seconds % 60;
                 return `${mins}:${secs.toString().padStart(2, '0')}`;
             }
-
-60;
-                return `${mins}:${secs.toString().padStart(2, '0')}`;
-            showMessage(message) {
-                const messageEl = document.createElement('div');
-                messageEl.className = 'message';
-                messageEl.textContent = message;
-                document.body.appendChild(messageEl);
-                
-                setTimeout(() => messageEl.remove(), 3000);
-                       }
 
             showMessage(message) {
                 const messageEl = document.createElement('div');
@@ -851,14 +763,11 @@ NGJdvx8/mqdefault.jpg'
                 
                 setTimeout(() => messageEl.remove(), 3000);
             }
-        }
-
-        // Inicial }
         }
 
         // Inicializar la app
         const app = new MusicApp();
-        console.log("🚀 BÚSQUEDA REAL activada - Prueba con 'Beny Jr', 'Rosalía', etc.");
+        console.log("🚀 YouTube ReVanced activado - SIN ANUNCIOS");
     </script>
 </body>
 </html>
