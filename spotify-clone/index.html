@@ -266,254 +266,334 @@
             <button onclick="app.stopPlayback()">⏹️</button>
         </div>
     </div>
+<script>
+class MusicApp {
+    constructor() {
+        this.currentTrack = null;
+        this.playlist = JSON.parse(localStorage.getItem('miPlaylist')) || [];
+        this.isPlaying = false;
+        this.audioPlayer = new Audio();
+        this.init();
+    }
 
-    <script>
-        class MusicApp {
-            constructor() {
-                this.currentTrack = null;
-                this.playlist = JSON.parse(localStorage.getItem('miPlaylist')) || [];
-                this.isPlaying = false;
-                this.audioPlayer = new Audio();
-                this.init();
-            }
+    init() {
+        console.log("🎵 Iniciando YouTube ReVanced MULTI-API...");
+        this.setupEventListeners();
+        this.loadPlaylist();
+    }
 
-            init() {
-                console.log("🎵 Iniciando YouTube ReVanced...");
-                this.setupEventListeners();
-                this.loadPlaylist();
-            }
+    setupEventListeners() {
+        document.querySelector('.search-btn').addEventListener('click', () => this.searchMusic());
+        document.querySelector('.search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.searchMusic();
+        });
+    }
 
-            setupEventListeners() {
-                document.querySelector('.search-btn').addEventListener('click', () => this.searchMusic());
-                document.querySelector('.search-input').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.searchMusic();
-                });
-            }
+    async searchMusic() {
+        const query = document.querySelector('.search-input').value.trim();
+        if (!query) return this.showMessage('Escribe algo para buscar 🎵');
 
-            async searchMusic() {
-                const query = document.querySelector('.search-input').value.trim();
-                if (!query) return this.showMessage('Escribe algo para buscar 🎵');
+        this.showLoading();
+        
+        // LISTA DE APIs REVANCED ALTERNATIVAS
+        const apis = [
+            'https://pipedapi.kavin.rocks',
+            'https://pipedapi-libre.kavin.rocks',
+            'https://pipedapi.moomoo.me', 
+            'https://ytapi.deno.dev',
+            'https://yt.lemnoslife.com'
+        ];
 
-                this.showLoading();
-                
-                try {
-                    // USANDO YOUTUBE INVIDIOUS + PIPED (ReVanced style)
-                    const results = await this.searchYouTubeReVanced(query);
-                    this.displaySearchResults(results);
-                } catch (error) {
-                    console.error('Error:', error);
-                    this.showMessage('⚠️ Usando búsqueda alternativa');
-                    const results = await this.searchYouTubeDirect(query);
-                    this.displaySearchResults(results);
-                }
-            }
-
-            async searchYouTubeReVanced(query) {
-                // API de Piped/ReVanced - Sin anuncios
-                const response = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=music`);
-                const data = await response.json();
-                
-                return data.items
-                    .filter(item => item.type === 'stream')
-                    .slice(0, 15)
-                    .map(item => ({
-                        id: item.url.split('/').pop(),
-                        title: item.title,
-                        artist: item.uploaderName,
-                        thumbnail: item.thumbnail,
-                        duration: this.formatDuration(item.duration)
-                    }));
-            }
-
-            async searchYouTubeDirect(query) {
-                // Fallback: YouTube Direct
-                const response = await fetch(`https://ytapi.deno.dev/api/v1/search?q=${encodeURIComponent(query)}&type=video`);
-                const data = await response.json();
-                
-                return data
-                    .filter(item => item.type === 'video')
-                    .slice(0, 12)
-                    .map(item => ({
-                        id: item.videoId,
-                        title: item.title,
-                        artist: item.author,
-                        thumbnail: item.videoThumbnails?.[3]?.url || item.videoThumbnails?.[0]?.url,
-                        duration: this.formatDuration(item.lengthSeconds)
-                    }));
-            }
-
-            displaySearchResults(results) {
-                const container = document.getElementById('search-results');
-                
-                if (!results || results.length === 0) {
-                    container.innerHTML = '<div class="loading">🎵 No se encontraron resultados</div>';
-                    return;
-                }
-
-                container.innerHTML = results.map(song => `
-                    <div class="music-card">
-                        <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
-                        <div class="card-title">${this.cleanTitle(song.title)}</div>
-                        <div class="card-artist">${song.artist}</div>
-                        <div class="card-duration">${song.duration}</div>
-                        <button class="play-btn" onclick="app.playSong('${song.id}', '${song.title}', '${song.artist}')">
-                            ▶️
-                        </button>
-                        <button class="add-btn" onclick="app.addToPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')})">
-                            ➕
-                        </button>
-                    </div>
-                `).join('');
-
-                this.showMessage(`✅ ${results.length} canciones encontradas`);
-            }
-
-            async playSong(videoId, title, artist) {
-                console.log(`🎵 Reproduciendo: ${title}`);
-                
-                this.currentTrack = { id: videoId, title, artist };
-                this.updatePlayer();
-                
-                try {
-                    // STREAM DIRECTO SIN ANUNCIOS (ReVanced style)
-                    const audioUrl = await this.getAudioStream(videoId);
-                    this.audioPlayer.src = audioUrl;
-                    this.audioPlayer.play();
-                    this.isPlaying = true;
-                    this.updatePlayButton();
-                    this.showMessage(`🎵 Reproduciendo: ${title}`);
-                } catch (error) {
-                    this.showMessage('❌ Error al reproducir');
-                }
-            }
-
-            async getAudioStream(videoId) {
-                // Stream de audio directo usando yt-dlp style
-                const services = [
-                    `https://pipedapi.kavin.rocks/streams/${videoId}`,
-                    `https://ytapi.deno.dev/api/v1/videos/${videoId}`
-                ];
-
-                for (const service of services) {
-                    try {
-                        const response = await fetch(service);
-                        const data = await response.json();
-                        return data.audioStreams?.[0]?.url || data.formatStreams?.[0]?.url;
-                    } catch (error) {
-                        continue;
-                    }
-                }
-                throw new Error('No se pudo obtener audio');
-            }
-
-            togglePlay() {
-                if (!this.currentTrack) return this.showMessage('🎵 Selecciona una canción primero');
-                
-                if (this.isPlaying) {
-                    this.audioPlayer.pause();
-                    this.isPlaying = false;
-                } else {
-                    this.audioPlayer.play();
-                    this.isPlaying = true;
-                }
-                this.updatePlayButton();
-            }
-
-            stopPlayback() {
-                this.audioPlayer.pause();
-                this.audioPlayer.currentTime = 0;
-                this.isPlaying = false;
-                this.updatePlayButton();
-            }
-
-            updatePlayButton() {
-                const btn = document.querySelector('.player-controls button');
-                if (btn) btn.innerHTML = this.isPlaying ? '⏸️' : '▶️';
-            }
-
-            addToPlaylist(song) {
-                if (!this.playlist.find(s => s.id === song.id)) {
-                    this.playlist.push(song);
-                    this.savePlaylist();
-                    this.showMessage(`✅ "${this.cleanTitle(song.title)}" añadida`);
-                }
-            }
-
-            loadPlaylist() {
-                const container = document.getElementById('playlist-songs');
-                if (this.playlist.length === 0) {
-                    container.innerHTML = '<div class="loading">📋 Playlist vacía</div>';
-                    return;
-                }
-                container.innerHTML = this.playlist.map(song => `
-                    <div class="music-card">
-                        <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
-                        <div class="card-title">${song.title}</div>
-                        <div class="card-artist">${song.artist}</div>
-                        <button class="play-btn" onclick="app.playSong('${song.id}', '${song.title}', '${song.artist}')">
-                            ▶️
-                        </button>
-                        <button class="add-btn" onclick="app.removeFromPlaylist('${song.id}')">
-                            ❌
-                        </button>
-                    </div>
-                `).join('');
-            }
-
-            removeFromPlaylist(songId) {
-                this.playlist = this.playlist.filter(song => song.id !== songId);
-                this.savePlaylist();
-                this.loadPlaylist();
-            }
-
-            savePlaylist() {
-                localStorage.setItem('miPlaylist', JSON.stringify(this.playlist));
-            }
-
-            updatePlayer() {
-                if (this.currentTrack) {
-                    document.getElementById('current-title').textContent = this.currentTrack.title;
-                    document.getElementById('current-artist').textContent = this.currentTrack.artist;
-                }
-            }
-
-            showSection(sectionId) {
-                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                document.getElementById(sectionId).classList.add('active');
-                
-                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-                event.target.classList.add('active');
-            }
-
-            showLoading() {
-                document.getElementById('search-results').innerHTML = `
-                    <div class="loading">
-                        <div>🎵</div>
-                        <p>Buscando en YouTube ReVanced...</p>
-                    </div>
-                `;
-            }
-
-            showMessage(text) {
-                const msg = document.createElement('div');
-                msg.className = 'message';
-                msg.textContent = text;
-                document.body.appendChild(msg);
-                setTimeout(() => msg.remove(), 3000);
-            }
-
-            cleanTitle(title) {
-                return title.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').trim();
-            }
-
-            formatDuration(seconds) {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                return `${mins}:${secs.toString().padStart(2, '0')}`;
+        // INTENTAR CON CADA API HASTA QUE UNA FUNCIONE
+        for (const apiBase of apis) {
+            try {
+                console.log(`🔧 Probando API: ${apiBase}`);
+                const results = await this.trySearchAPI(apiBase, query);
+                this.displaySearchResults(results);
+                this.showMessage(`✅ Conectado via ${apiBase.split('//')[1]}`);
+                return; // ¡ÉXITO! Salir del bucle
+            } catch (error) {
+                console.log(`❌ Falló: ${apiBase}`);
+                continue; // Intentar siguiente API
             }
         }
+        
+        // SI TODAS FALLAN
+        this.showMessage('🎵 Usando búsqueda local de emergencia');
+        this.showLocalResults(query);
+    }
 
-        const app = new MusicApp();
-    </script>
+    async trySearchAPI(apiBase, query) {
+        let searchUrl, data;
+        
+        if (apiBase.includes('piped')) {
+            // API PIPED
+            searchUrl = `${apiBase}/search?q=${encodeURIComponent(query)}&filter=music`;
+            const response = await fetch(searchUrl);
+            if (!response.ok) throw new Error('API no respondió');
+            data = await response.json();
+            
+            return data.items
+                .filter(item => item.type === 'stream')
+                .slice(0, 15)
+                .map(item => ({
+                    id: item.url.split('/').pop(),
+                    title: item.title,
+                    artist: item.uploaderName,
+                    thumbnail: item.thumbnail,
+                    duration: this.formatDuration(item.duration)
+                }));
+        } else {
+            // API YOUTUBE ALTERNATIVA
+            searchUrl = `${apiBase}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
+            const response = await fetch(searchUrl);
+            if (!response.ok) throw new Error('API no respondió');
+            data = await response.json();
+            
+            return data
+                .filter(item => item.type === 'video')
+                .slice(0, 12)
+                .map(item => ({
+                    id: item.videoId,
+                    title: item.title,
+                    artist: item.author,
+                    thumbnail: item.videoThumbnails?.[3]?.url || item.videoThumbnails?.[0]?.url,
+                    duration: this.formatDuration(item.lengthSeconds)
+                }));
+        }
+    }
+
+    displaySearchResults(results) {
+        const container = document.getElementById('search-results');
+        
+        if (!results || results.length === 0) {
+            container.innerHTML = '<div class="loading">🎵 No se encontraron resultados</div>';
+            return;
+        }
+
+        container.innerHTML = results.map(song => `
+            <div class="music-card">
+                <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
+                <div class="card-title">${this.cleanTitle(song.title)}</div>
+                <div class="card-artist">${song.artist}</div>
+                <div class="card-duration">${song.duration}</div>
+                <button class="play-btn" onclick="app.playSong('${song.id}', '${song.title}', '${song.artist}')">
+                    ▶️
+                </button>
+                <button class="add-btn" onclick="app.addToPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')})">
+                    ➕
+                </button>
+            </div>
+        `).join('');
+
+        this.showMessage(`✅ ${results.length} canciones encontradas`);
+    }
+
+    async playSong(videoId, title, artist) {
+        console.log(`🎵 Reproduciendo: ${title}`);
+        
+        this.currentTrack = { id: videoId, title, artist };
+        this.updatePlayer();
+        
+        try {
+            // STREAM DIRECTO SIN ANUNCIOS
+            const audioUrl = await this.getAudioStream(videoId);
+            this.audioPlayer.src = audioUrl;
+            this.audioPlayer.play();
+            this.isPlaying = true;
+            this.updatePlayButton();
+            this.showMessage(`🎵 Reproduciendo: ${title}`);
+        } catch (error) {
+            this.showMessage('❌ Error al reproducir');
+        }
+    }
+
+    async getAudioStream(videoId) {
+        // Múltiples fuentes de audio
+        const apis = [
+            `https://pipedapi.kavin.rocks/streams/${videoId}`,
+            `https://pipedapi-libre.kavin.rocks/streams/${videoId}`,
+            `https://ytapi.deno.dev/api/v1/videos/${videoId}`
+        ];
+
+        for (const api of apis) {
+            try {
+                const response = await fetch(api);
+                const data = await response.json();
+                const audioUrl = data.audioStreams?.[0]?.url || data.formatStreams?.[0]?.url;
+                if (audioUrl) return audioUrl;
+            } catch (error) {
+                continue;
+            }
+        }
+        throw new Error('No se pudo obtener audio');
+    }
+
+    togglePlay() {
+        if (!this.currentTrack) return this.showMessage('🎵 Selecciona una canción primero');
+        
+        if (this.isPlaying) {
+            this.audioPlayer.pause();
+            this.isPlaying = false;
+        } else {
+            this.audioPlayer.play();
+            this.isPlaying = true;
+        }
+        this.updatePlayButton();
+    }
+
+    stopPlayback() {
+        this.audioPlayer.pause();
+        this.audioPlayer.currentTime = 0;
+        this.isPlaying = false;
+        this.updatePlayButton();
+    }
+
+    updatePlayButton() {
+        const btn = document.querySelector('.player-controls button');
+        if (btn) btn.innerHTML = this.isPlaying ? '⏸️' : '▶️';
+    }
+
+    addToPlaylist(song) {
+        if (!this.playlist.find(s => s.id === song.id)) {
+            this.playlist.push(song);
+            this.savePlaylist();
+            this.showMessage(`✅ "${this.cleanTitle(song.title)}" añadida`);
+        }
+    }
+
+    loadPlaylist() {
+        const container = document.getElementById('playlist-songs');
+        if (this.playlist.length === 0) {
+            container.innerHTML = '<div class="loading">📋 Playlist vacía</div>';
+            return;
+        }
+        container.innerHTML = this.playlist.map(song => `
+            <div class="music-card">
+                <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
+                <div class="card-title">${song.title}</div>
+                <div class="card-artist">${song.artist}</div>
+                <button class="play-btn" onclick="app.playSong('${song.id}', '${song.title}', '${song.artist}')">
+                    ▶️
+                </button>
+                <button class="add-btn" onclick="app.removeFromPlaylist('${song.id}')">
+                    ❌
+                </button>
+            </div>
+        `).join('');
+    }
+
+    removeFromPlaylist(songId) {
+        this.playlist = this.playlist.filter(song => song.id !== songId);
+        this.savePlaylist();
+        this.loadPlaylist();
+    }
+
+    savePlaylist() {
+        localStorage.setItem('miPlaylist', JSON.stringify(this.playlist));
+    }
+
+    updatePlayer() {
+        if (this.currentTrack) {
+            document.getElementById('current-title').textContent = this.currentTrack.title;
+            document.getElementById('current-artist').textContent = this.currentTrack.artist;
+        }
+    }
+
+    showSection(sectionId) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    showLoading() {
+        document.getElementById('search-results').innerHTML = `
+            <div class="loading">
+                <div>🎵</div>
+                <p>Buscando en YouTube ReVanced...</p>
+            </div>
+        `;
+    }
+
+    showLocalResults(query) {
+        const localSongs = this.getLocalSongs(query);
+        this.displaySearchResults(localSongs);
+    }
+
+    getLocalSongs(query) {
+        const allSongs = [
+            {
+                id: 'CY8E6N5Nzec',
+                title: 'Bad Bunny - Monaco',
+                artist: 'Bad Bunny',
+                duration: '4:27',
+                thumbnail: 'https://img.youtube.com/vi/CY8E6N5Nzec/mqdefault.jpg'
+            },
+            {
+                id: 'jVrA-6d5jtQ',
+                title: 'Bad Bunny - Where She Goes',
+                artist: 'Bad Bunny', 
+                duration: '3:51',
+                thumbnail: 'https://img.youtube.com/vi/jVrA-6d5jtQ/mqdefault.jpg'
+            },
+            {
+                id: 'JGwWNGJdvx8',
+                title: 'Ed Sheeran - Shape of You',
+                artist: 'Ed Sheeran',
+                duration: '3:53',
+                thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg'
+            },
+            {
+                id: 'kJQP7kiw5Fk',
+                title: 'Luis Fonsi - Despacito ft. Daddy Yankee',
+                artist: 'Luis Fonsi',
+                duration: '3:59',
+                thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg'
+            },
+            {
+                id: '5gsL_7x9VUE',
+                title: 'Beny Jr - Como Lo Hice Yo',
+                artist: 'Beny Jr',
+                duration: '3:35',
+                thumbnail: 'https://img.youtube.com/vi/5gsL_7x9VUE/mqdefault.jpg'
+            }
+        ];
+
+        const queryLower = query.toLowerCase();
+        return allSongs.filter(song => 
+            song.title.toLowerCase().includes(queryLower) ||
+            song.artist.toLowerCase().includes(queryLower)
+        );
+    }
+
+    showMessage(text) {
+        const msg = document.createElement('div');
+        msg.className = 'message';
+        msg.textContent = text;
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+    }
+
+    cleanTitle(title) {
+        return title
+            .replace(/\(official music video\)/gi, '')
+            .replace(/\(official audio\)/gi, '')
+            .replace(/\(lyrics\)/gi, '')
+            .replace(/\[.*\]/g, '')
+            .replace(/\(.*\)/g, '')
+            .trim();
+    }
+
+    formatDuration(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+}
+
+const app = new MusicApp();
+</script>
 </body>
 </html>
