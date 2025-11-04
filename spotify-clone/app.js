@@ -1,163 +1,188 @@
+// app.js - VERSIÓN FUNCIONAL
 class MusicApp {
     constructor() {
         this.currentTrack = null;
-        this.isPlaying = false;
-        this.player = null;
+        this.playlist = JSON.parse(localStorage.getItem('miPlaylist')) || [];
+        this.searchAPIs = [
+            'https://vid.puffyan.us',
+            'https://inv.tux.pizza',
+            'https://invidious.snopyta.org'
+        ];
         
         this.init();
     }
 
     init() {
+        console.log("🎵 Iniciando Mi Música App...");
         this.setupEventListeners();
-        this.loadYouTubeAPI();
-        this.loadRecommendations();
-        console.log('🎵 App iniciada correctamente');
+        this.loadPlaylist();
+        this.setupServiceWorker();
     }
 
     setupEventListeners() {
-        // Buscar
-        document.getElementById('searchBtn').addEventListener('click', () => this.searchMusic());
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+        // Búsqueda
+        const searchBtn = document.querySelector('.search-btn');
+        const searchInput = document.querySelector('.search-input');
+        
+        searchBtn.addEventListener('click', () => this.searchMusic());
+        searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.searchMusic();
         });
-    }
 
-    loadYouTubeAPI() {
-        if (!window.YT) {
-            const script = document.createElement('script');
-            script.src = 'https://www.youtube.com/iframe_api';
-            document.head.appendChild(script);
-        }
-
-        window.onYouTubeIframeAPIReady = () => {
-            console.log('✅ YouTube API lista');
-            this.createPlayer();
-        };
-    }
-
-    createPlayer() {
-        const playerDiv = document.createElement('div');
-        playerDiv.id = 'youtube-player';
-        playerDiv.style.display = 'none';
-        document.body.appendChild(playerDiv);
-
-        this.player = new YT.Player('youtube-player', {
-            height: '0',
-            width: '0',
-            playerVars: {
-                'playsinline': 1,
-                'controls': 0,
-                'modestbranding': 1,
-                'rel': 0
-            },
-            events: {
-                'onReady': () => {
-                    console.log('🎵 Reproductor listo');
-                },
-                'onStateChange': (event) => {
-                    if (event.data === YT.PlayerState.PLAYING) {
-                        this.isPlaying = true;
-                        this.updatePlayButton();
-                    } else if (event.data === YT.PlayerState.PAUSED) {
-                        this.isPlaying = false;
-                        this.updatePlayButton();
-                    }
-                }
-            }
-        });
-    }
-
-    showSection(sectionId) {
-        // Ocultar todas las secciones
-        document.querySelectorAll('.section').forEach(section => {
-            section.classList.remove('active');
-        });
-
-        // Mostrar sección seleccionada
-        document.getElementById(sectionId).classList.add('active');
-
-        // Actualizar navegación
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        
-        // Encontrar y activar el botón correspondiente
-        const activeNav = Array.from(document.querySelectorAll('.nav-item')).find(item => 
-            item.textContent.includes(
-                sectionId === 'home' ? 'Inicio' : 
-                sectionId === 'search' ? 'Buscar' : 'Biblioteca'
-            )
-        );
-        if (activeNav) activeNav.classList.add('active');
+        console.log("✅ Event listeners configurados");
     }
 
     async searchMusic() {
-        const query = document.getElementById('searchInput').value.trim();
+        const query = document.querySelector('.search-input').value.trim();
         if (!query) {
-            alert('Escribe algo para buscar');
+            this.showMessage('Escribe algo para buscar 🎵');
             return;
         }
 
         this.showLoading();
+        console.log(`🔍 Buscando: ${query}`);
 
         try {
-            // Usar API de Invidious
-            const response = await fetch(`https://inv.odyssey346.dev/api/v1/search?q=${encodeURIComponent(query)}&type=video`);
-            const data = await response.json();
+            // Intentar con cada API hasta que una funcione
+            for (const apiBase of this.searchAPIs) {
+                try {
+                    const results = await this.searchWithAPI(apiBase, query);
+                    this.displaySearchResults(results);
+                    console.log(`✅ Búsqueda exitosa con: ${apiBase}`);
+                    return;
+                } catch (error) {
+                    console.log(`❌ Falló API: ${apiBase}`, error);
+                    continue;
+                }
+            }
             
-            const musicVideos = data
-                .filter(video => !video.title.toLowerCase().includes('live') && !video.title.toLowerCase().includes('podcast'))
-                .slice(0, 8)
-                .map(video => ({
-                    id: video.videoId,
-                    title: video.title,
-                    artist: video.author,
-                    thumbnail: video.videoThumbnails?.[3]?.url || video.videoThumbnails?.[0]?.url
-                }));
-
-            this.displaySearchResults(musicVideos);
+            throw new Error('Todas las APIs fallaron');
+            
         } catch (error) {
-            console.log('Error en búsqueda:', error);
-            this.displayFallbackResults();
+            console.error('Error en búsqueda:', error);
+            this.showFallbackResults();
         }
     }
 
-    displaySearchResults(videos) {
-        const container = document.getElementById('searchResults');
-        container.innerHTML = '';
+    async searchWithAPI(apiBase, query) {
+        const searchUrl = `${apiBase}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
+        
+        const response = await fetch(searchUrl);
+        if (!response.ok) throw new Error('API no respondió');
+        
+        const data = await response.json();
+        
+        // Filtrar solo contenido musical
+        return data
+            .filter(item => 
+                item.type === 'video' && 
+                !item.title.toLowerCase().includes('podcast') &&
+                !item.title.toLowerCase().includes('live') &&
+                item.lengthSeconds > 120 // Más de 2 minutos
+            )
+            .slice(0, 12) // Limitar a 12 resultados
+            .map(item => ({
+                id: item.videoId,
+                title: item.title,
+                artist: item.author,
+                duration: this.formatDuration(item.lengthSeconds),
+                thumbnail: item.videoThumbnails?.[3]?.url || item.videoThumbnails?.[0]?.url,
+                views: item.viewCount
+            }));
+    }
 
-        if (videos.length === 0) {
-            container.innerHTML = '<div class="loading"><p>No se encontraron resultados</p></div>';
+    displaySearchResults(results) {
+        const container = document.getElementById('search-results');
+        
+        if (!results || results.length === 0) {
+            container.innerHTML = '<div class="no-results">🎵 No se encontraron resultados</div>';
             return;
         }
 
-        videos.forEach(video => {
-            const card = this.createMusicCard(video);
-            container.appendChild(card);
-        });
-    }
-
-    createMusicCard(video) {
-        const card = document.createElement('div');
-        card.className = 'music-card';
-        card.innerHTML = `
-            <div class="card-cover">
-                <img src="${video.thumbnail}" alt="${video.title}">
-                <button class="play-btn" onclick="event.stopPropagation(); app.playTrack(${JSON.stringify(video).replace(/"/g, '&quot;')})">
-                    <i class="bi bi-play-fill"></i>
+        container.innerHTML = results.map(song => `
+            <div class="music-card" onclick="app.playSong('${song.id}')">
+                <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
+                <div class="card-title">${this.cleanTitle(song.title)}</div>
+                <div class="card-artist">${song.artist}</div>
+                <div class="card-duration">${song.duration}</div>
+                <button class="add-btn" onclick="event.stopPropagation(); app.addToPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')})">
+                    ➕
                 </button>
             </div>
-            <div class="card-title">${this.cleanTitle(video.title)}</div>
-            <div class="card-artist">${video.artist}</div>
-        `;
+        `).join('');
 
-        card.addEventListener('click', () => {
-            this.playTrack(video);
-        });
-
-        return card;
+        console.log(`✅ Mostrando ${results.length} resultados`);
     }
 
+    playSong(videoId) {
+        console.log(`🎵 Reproduciendo: ${videoId}`);
+        
+        // Buscar la canción en los resultados
+        const songElement = document.querySelector(`[onclick*="${videoId}"]`);
+        if (songElement) {
+            const title = songElement.querySelector('.card-title').textContent;
+            const artist = songElement.querySelector('.card-artist').textContent;
+            
+            this.currentTrack = { id: videoId, title, artist };
+            this.updatePlayer();
+            
+            // Abrir YouTube para reproducir (solución funcional)
+            window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+        }
+    }
+
+    addToPlaylist(song) {
+        // Evitar duplicados
+        if (!this.playlist.find(s => s.id === song.id)) {
+            this.playlist.push(song);
+            this.savePlaylist();
+            this.showMessage(`✅ "${this.cleanTitle(song.title)}" añadida a playlist`);
+            console.log('📋 Canción añadida a playlist:', song);
+        } else {
+            this.showMessage('⚠️ Ya está en la playlist');
+        }
+    }
+
+    loadPlaylist() {
+        const container = document.getElementById('playlist-songs');
+        
+        if (this.playlist.length === 0) {
+            container.innerHTML = '<div class="no-results">📋 Tu playlist está vacía</div>';
+            return;
+        }
+
+        container.innerHTML = this.playlist.map(song => `
+            <div class="music-card" onclick="app.playSong('${song.id}')">
+                <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
+                <div class="card-title">${this.cleanTitle(song.title)}</div>
+                <div class="card-artist">${song.artist}</div>
+                <div class="card-duration">${song.duration}</div>
+                <button class="remove-btn" onclick="event.stopPropagation(); app.removeFromPlaylist('${song.id}')">
+                    ❌
+                </button>
+            </div>
+        `).join('');
+    }
+
+    removeFromPlaylist(songId) {
+        this.playlist = this.playlist.filter(song => song.id !== songId);
+        this.savePlaylist();
+        this.loadPlaylist();
+        this.showMessage('🗑️ Canción eliminada');
+    }
+
+    savePlaylist() {
+        localStorage.setItem('miPlaylist', JSON.stringify(this.playlist));
+    }
+
+    updatePlayer() {
+        if (this.currentTrack) {
+            document.querySelector('.player-title').textContent = this.currentTrack.title;
+            document.querySelector('.player-artist').textContent = this.currentTrack.artist;
+        }
+    }
+
+    // Utilidades
     cleanTitle(title) {
         return title
             .replace(/\(official music video\)/gi, '')
@@ -165,44 +190,80 @@ class MusicApp {
             .replace(/\(lyrics\)/gi, '')
             .replace(/\[.*\]/g, '')
             .replace(/\(.*\)/g, '')
+            .replace(/\\u0026/g, '&')
             .trim();
     }
 
-    playTrack(track) {
-        console.log('🎵 Reproduciendo:', track.title);
-        this.currentTrack = track;
-        
-        // Actualizar UI
-        document.querySelector('.track-name').textContent = track.title;
-        document.querySelector('.track-artist').textContent = track.artist;
-
-        // Reproducir con YouTube
-        if (this.player && this.player.loadVideoById) {
-            this.player.loadVideoById(track.id);
-            this.player.playVideo();
-        } else {
-            // Fallback: abrir en YouTube
-            window.open(`https://www.youtube.com/watch?v=${track.id}`, '_blank');
-        }
+    formatDuration(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
-    togglePlay() {
-        if (!this.currentTrack) {
-            alert('Selecciona una canción primero');
-            return;
-        }
+    showLoading() {
+        document.getElementById('search-results').innerHTML = `
+            <div class="loading">
+                <div class="spinner">🎵</div>
+                <p>Buscando música...</p>
+            </div>
+        `;
+    }
 
-        if (this.player) {
-            if (this.isPlaying) {
-                this.player.pauseVideo();
-            } else {
-                this.player.playVideo();
+    showFallbackResults() {
+        const fallbackSongs = [
+            {
+                id: 'kJQP7kiw5Fk',
+                title: 'Despacito - Luis Fonsi ft. Daddy Yankee',
+                artist: 'Luis Fonsi',
+                duration: '4:41',
+                thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg'
+            },
+            {
+                id: 'JGwWNGJdvx8',
+                title: 'Shape of You - Ed Sheeran',
+                artist: 'Ed Sheeran',
+                duration: '4:23',
+                thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg'
+            }
+        ];
+        
+        this.displaySearchResults(fallbackSongs);
+        this.showMessage('⚠️ Usando música de respaldo');
+    }
+
+    showMessage(message) {
+        // Mensaje temporal en la interfaz
+        const messageEl = document.createElement('div');
+        messageEl.style.cssText = `
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1DB954;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            z-index: 1000;
+            font-size: 14px;
+        `;
+        messageEl.textContent = message;
+        document.body.appendChild(messageEl);
+        
+        setTimeout(() => messageEl.remove(), 3000);
+    }
+
+    async setupServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            try {
+                await navigator.serviceWorker.register('./sw.js');
+                console.log('✅ Service Worker registrado');
+            } catch (error) {
+                console.log('❌ Service Worker falló:', error);
             }
         }
     }
+}
 
-    updatePlayButton() {
-        const playBtn = document.querySelector('.play-btn-main i');
-        if (this.isPlaying) {
-            playBtn.classList.remove('bi-play-fill');
-            play
+// Inicializar la app
+const app = new MusicApp();
+console.log("🚀 Mi Música App completamente inicializada");
