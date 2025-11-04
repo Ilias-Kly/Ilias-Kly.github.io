@@ -25,11 +25,9 @@
             overflow-x: hidden;
         }
 
-        /* Efecto Liquid Glass para el header */
         .header {
             background: var(--glass-bg);
             backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding: 20px;
             position: sticky;
@@ -57,24 +55,14 @@
             outline: none;
         }
 
-        .search-input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
         .search-btn {
             background: var(--verde-spotify);
             border: none;
             padding: 0 25px;
             cursor: pointer;
             font-size: 18px;
-            transition: background 0.2s;
         }
 
-        .search-btn:hover {
-            background: #1ed760;
-        }
-
-        /* Navegación */
         .nav {
             display: flex;
             background: var(--negrito-bonito);
@@ -89,7 +77,6 @@
             color: #b3b3b3;
             font-size: 16px;
             cursor: pointer;
-            transition: color 0.2s;
         }
 
         .nav-btn.active {
@@ -97,7 +84,6 @@
             border-bottom: 2px solid var(--verde-spotify);
         }
 
-        /* Contenido principal */
         .main-content {
             padding: 20px;
             max-width: 1200px;
@@ -112,7 +98,6 @@
             display: block;
         }
 
-        /* Efecto Liquid Glass para las tarjetas */
         .music-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -123,18 +108,16 @@
         .music-card {
             background: var(--glass-bg);
             backdrop-filter: blur(15px) saturate(160%);
-            -webkit-backdrop-filter: blur(15px) saturate(160%);
             border-radius: 12px;
             padding: 15px;
             cursor: pointer;
-            transition: transform 0.2s, background 0.2s;
+            transition: transform 0.2s;
             border: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
         }
 
         .music-card:hover {
             transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.12);
         }
 
         .card-cover {
@@ -144,7 +127,6 @@
             border-radius: 8px;
             margin-bottom: 12px;
             background-size: cover;
-            background-position: center;
         }
 
         .card-title {
@@ -160,45 +142,15 @@
         .card-artist {
             color: #b3b3b3;
             font-size: 12px;
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
         }
 
-        /* Estados de carga */
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #b3b3b3;
-        }
-
-        .spinner {
-            font-size: 24px;
-            margin-bottom: 10px;
-            animation: spin 2s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 40px;
-            color: #b3b3b3;
-            grid-column: 1 / -1;
-        }
-
-        /* Botones en las cards */
-        .play-btn, .add-btn, .remove-btn {
+        .play-btn, .add-btn {
             position: absolute;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             border: none;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 35px;
+            height: 35px;
             cursor: pointer;
             color: white;
             font-size: 12px;
@@ -217,29 +169,14 @@
             right: 10px;
         }
 
-        .remove-btn {
-            top: 10px;
-            right: 10px;
-            background: #ff4444;
-        }
-
         .music-card:hover .play-btn,
-        .music-card:hover .add-btn,
-        .music-card:hover .remove-btn {
+        .music-card:hover .add-btn {
             opacity: 1;
         }
 
-        .card-duration {
-            font-size: 11px;
-            color: #b3b3b3;
-            margin-top: 5px;
-        }
-
-        /* Player bar con controles */
         .player-bar {
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             padding: 15px 20px;
             position: fixed;
@@ -258,17 +195,11 @@
         .player-title {
             font-weight: 600;
             margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .player-artist {
             color: #b3b3b3;
             font-size: 12px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .player-controls button {
@@ -281,7 +212,12 @@
             font-size: 14px;
         }
 
-        /* Mensajes */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #b3b3b3;
+        }
+
         .message {
             position: fixed;
             top: 100px;
@@ -292,25 +228,10 @@
             padding: 10px 20px;
             border-radius: 25px;
             z-index: 1000;
-            font-size: 14px;
-        }
-
-        /* Reproductor integrado */
-        #youtube-player {
-            width: 100%;
-            height: 200px;
-            margin-top: 20px;
-            border-radius: 10px;
-            display: none;
-        }
-
-        .player-active #youtube-player {
-            display: block;
         }
     </style>
 </head>
 <body>
-    <!-- Header con búsqueda -->
     <div class="header">
         <div class="search-container">
             <input type="text" class="search-input" placeholder="🔍 Buscar música...">
@@ -318,36 +239,23 @@
         </div>
     </div>
 
-    <!-- Navegación simple -->
     <div class="nav">
         <button class="nav-btn active" onclick="app.showSection('inicio')">🏠 Inicio</button>
         <button class="nav-btn" onclick="app.showSection('playlist')">📋 Playlist</button>
     </div>
 
-    <!-- Contenido principal -->
     <div class="main-content">
-        <!-- Sección Inicio -->
         <div id="inicio" class="section active">
             <h2>🎵 Busca tu música</h2>
-            <p>Escribe en la barra de arriba para encontrar canciones</p>
-            <div id="search-results" class="music-grid">
-                <!-- Los resultados de búsqueda aparecerán aquí -->
-            </div>
-            
-            <!-- Reproductor YouTube integrado -->
-            <div id="youtube-player"></div>
+            <div id="search-results" class="music-grid"></div>
         </div>
 
-        <!-- Sección Playlist -->
         <div id="playlist" class="section">
             <h2>📋 Tu Playlist</h2>
-            <div id="playlist-songs" class="music-grid">
-                <!-- Las canciones guardadas aparecerán aquí -->
-            </div>
+            <div id="playlist-songs" class="music-grid"></div>
         </div>
     </div>
 
-    <!-- Player -->
     <div class="player-bar">
         <div class="player-info">
             <div class="player-title" id="current-title">🎵 Selecciona una canción</div>
@@ -360,15 +268,12 @@
     </div>
 
     <script>
-        // APP CON YOUTUBE REVANCED - SIN ANUNCIOS
         class MusicApp {
             constructor() {
                 this.currentTrack = null;
                 this.playlist = JSON.parse(localStorage.getItem('miPlaylist')) || [];
                 this.isPlaying = false;
-                this.youtubePlayer = null;
-                this.isPlayerReady = false;
-                
+                this.audioPlayer = new Audio();
                 this.init();
             }
 
@@ -376,232 +281,72 @@
                 console.log("🎵 Iniciando YouTube ReVanced...");
                 this.setupEventListeners();
                 this.loadPlaylist();
-                this.loadYouTubeAPI();
             }
 
             setupEventListeners() {
-                // Búsqueda
-                const searchBtn = document.querySelector('.search-btn');
-                const searchInput = document.querySelector('.search-input');
-                
-                searchBtn.addEventListener('click', () => this.searchMusic());
-                searchInput.addEventListener('keypress', (e) => {
+                document.querySelector('.search-btn').addEventListener('click', () => this.searchMusic());
+                document.querySelector('.search-input').addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') this.searchMusic();
                 });
-
-                console.log("✅ Event listeners configurados");
-            }
-
-            loadYouTubeAPI() {
-                // Cargar API de YouTube
-                const tag = document.createElement('script');
-                tag.src = "https://www.youtube.com/iframe_api";
-                document.head.appendChild(tag);
-
-                window.onYouTubeIframeAPIReady = () => {
-                    console.log("✅ YouTube API lista");
-                    this.createYouTubePlayer();
-                };
-            }
-
-            createYouTubePlayer() {
-                this.youtubePlayer = new YT.Player('youtube-player', {
-                    height: '200',
-                    width: '100%',
-                    playerVars: {
-                        'autoplay': 0,
-                        'controls': 1,
-                        'rel': 0,
-                        'modestbranding': 1,
-                        'playsinline': 1,
-                        'iv_load_policy': 3 // No mostrar anotaciones
-                    },
-                    events: {
-                        'onReady': (event) => {
-                            console.log("🎵 Reproductor de YouTube listo");
-                            this.isPlayerReady = true;
-                        },
-                        'onStateChange': (event) => {
-                            if (event.data === YT.PlayerState.PLAYING) {
-                                this.isPlaying = true;
-                                this.updatePlayButton();
-                            } else if (event.data === YT.PlayerState.PAUSED) {
-                                this.isPlaying = false;
-                                this.updatePlayButton();
-                            }
-                        }
-                    }
-                });
-            }
-
-            showSection(sectionId) {
-                document.querySelectorAll('.section').forEach(section => {
-                    section.classList.remove('active');
-                });
-                document.getElementById(sectionId).classList.add('active');
-                
-                document.querySelectorAll('.nav-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                const buttons = document.querySelectorAll('.nav-btn');
-                const targetBtn = Array.from(buttons).find(btn => 
-                    btn.textContent.includes(sectionId === 'inicio' ? 'Inicio' : 'Playlist')
-                );
-                if (targetBtn) targetBtn.classList.add('active');
             }
 
             async searchMusic() {
                 const query = document.querySelector('.search-input').value.trim();
-                if (!query) {
-                    this.showMessage('Escribe algo para buscar 🎵');
-                    return;
-                }
+                if (!query) return this.showMessage('Escribe algo para buscar 🎵');
 
                 this.showLoading();
-                console.log(`🔍 Buscando: ${query}`);
-
+                
                 try {
-                    // Usar API de Piped/ReVanced que SÍ funciona
-                    const results = await this.searchWithReVancedAPI(query);
+                    // USANDO YOUTUBE INVIDIOUS + PIPED (ReVanced style)
+                    const results = await this.searchYouTubeReVanced(query);
                     this.displaySearchResults(results);
-                    
                 } catch (error) {
-                    console.error('Error en búsqueda:', error);
-                    this.showMessage('❌ Error al buscar. Probando alternativa...');
-                    await this.searchWithBackupAPI(query);
+                    console.error('Error:', error);
+                    this.showMessage('⚠️ Usando búsqueda alternativa');
+                    const results = await this.searchYouTubeDirect(query);
+                    this.displaySearchResults(results);
                 }
             }
 
-            async searchWithReVancedAPI(query) {
-                // API de Piped/ReVanced - SIN anuncios
-                const searchUrl = `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=music`;
-                
-                console.log(`🌐 Buscando en Piped API: ${searchUrl}`);
-                
-                const response = await fetch(searchUrl);
-                if (!response.ok) throw new Error('API no respondió');
-                
+            async searchYouTubeReVanced(query) {
+                // API de Piped/ReVanced - Sin anuncios
+                const response = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=music`);
                 const data = await response.json();
-                console.log('📦 Resultados recibidos:', data.items.length);
                 
-                // Procesar resultados de música
-                const musicVideos = data.items
-                    .filter(item => item.type === 'stream' && item.duration > 60)
+                return data.items
+                    .filter(item => item.type === 'stream')
                     .slice(0, 15)
                     .map(item => ({
-                        id: item.url.split('/').pop(), // Extraer ID del video
+                        id: item.url.split('/').pop(),
                         title: item.title,
                         artist: item.uploaderName,
-                        duration: this.formatDuration(item.duration),
-                        thumbnail: item.thumbnail
+                        thumbnail: item.thumbnail,
+                        duration: this.formatDuration(item.duration)
                     }));
-
-                if (musicVideos.length === 0) {
-                    throw new Error('No se encontraron resultados musicales');
-                }
-
-                return musicVideos;
             }
 
-            async searchWithBackupAPI(query) {
-                try {
-                    // API alternativa de Invidious
-                    const searchUrl = `https://ytapi.deno.dev/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
-                    const response = await fetch(searchUrl);
-                    const data = await response.json();
-                    
-                    const musicVideos = data
-                        .filter(item => item.type === 'video' && item.lengthSeconds > 60)
-                        .slice(0, 12)
-                        .map(item => ({
-                            id: item.videoId,
-                            title: item.title,
-                            artist: item.author,
-                            duration: this.formatDuration(item.lengthSeconds),
-                            thumbnail: item.videoThumbnails?.[3]?.url || item.videoThumbnails?.[0]?.url
-                        }));
-
-                    this.displaySearchResults(musicVideos);
-                    
-                } catch (error) {
-                    console.error('Backup también falló:', error);
-                    this.showMessage('⚠️ Usando búsqueda local');
-                    this.showLocalResults(query);
-                }
-            }
-
-            showLocalResults(query) {
-                // Resultados locales de emergencia
-                const localSongs = this.getLocalSongs(query);
-                this.displaySearchResults(localSongs);
-            }
-
-            getLocalSongs(query) {
-                const allSongs = [
-                    {
-                        id: 'CY8E6N5Nzec',
-                        title: 'Bad Bunny - Monaco',
-                        artist: 'Bad Bunny',
-                        duration: '4:27',
-                        thumbnail: 'https://img.youtube.com/vi/CY8E6N5Nzec/mqdefault.jpg'
-                    },
-                    {
-                        id: 'jVrA-6d5jtQ',
-                        title: 'Bad Bunny - Where She Goes',
-                        artist: 'Bad Bunny', 
-                        duration: '3:51',
-                        thumbnail: 'https://img.youtube.com/vi/jVrA-6d5jtQ/mqdefault.jpg'
-                    },
-                    {
-                        id: 'JGwWNGJdvx8',
-                        title: 'Ed Sheeran - Shape of You',
-                        artist: 'Ed Sheeran',
-                        duration: '3:53',
-                        thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/mqdefault.jpg'
-                    },
-                    {
-                        id: 'kJQP7kiw5Fk',
-                        title: 'Luis Fonsi - Despacito ft. Daddy Yankee',
-                        artist: 'Luis Fonsi',
-                        duration: '3:59',
-                        thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/mqdefault.jpg'
-                    },
-                    {
-                        id: '60ItHLz5WEA',
-                        title: 'The Weeknd - Blinding Lights',
-                        artist: 'The Weeknd',
-                        duration: '3:20',
-                        thumbnail: 'https://img.youtube.com/vi/60ItHLz5WEA/mqdefault.jpg'
-                    },
-                    {
-                        id: '5gsL_7x9VUE',
-                        title: 'Beny Jr - Como Lo Hice Yo',
-                        artist: 'Beny Jr',
-                        duration: '3:35',
-                        thumbnail: 'https://img.youtube.com/vi/5gsL_7x9VUE/mqdefault.jpg'
-                    },
-                    {
-                        id: '7L14LtW2kCw',
-                        title: 'Beny Jr - Porsche',
-                        artist: 'Beny Jr',
-                        duration: '3:08',
-                        thumbnail: 'https://img.youtube.com/vi/7L14LtW2kCw/mqdefault.jpg'
-                    }
-                ];
-
-                const queryLower = query.toLowerCase();
-                return allSongs.filter(song => 
-                    song.title.toLowerCase().includes(queryLower) ||
-                    song.artist.toLowerCase().includes(queryLower)
-                );
+            async searchYouTubeDirect(query) {
+                // Fallback: YouTube Direct
+                const response = await fetch(`https://ytapi.deno.dev/api/v1/search?q=${encodeURIComponent(query)}&type=video`);
+                const data = await response.json();
+                
+                return data
+                    .filter(item => item.type === 'video')
+                    .slice(0, 12)
+                    .map(item => ({
+                        id: item.videoId,
+                        title: item.title,
+                        artist: item.author,
+                        thumbnail: item.videoThumbnails?.[3]?.url || item.videoThumbnails?.[0]?.url,
+                        duration: this.formatDuration(item.lengthSeconds)
+                    }));
             }
 
             displaySearchResults(results) {
                 const container = document.getElementById('search-results');
                 
                 if (!results || results.length === 0) {
-                    container.innerHTML = '<div class="no-results">🎵 No se encontraron resultados</div>';
+                    container.innerHTML = '<div class="loading">🎵 No se encontraron resultados</div>';
                     return;
                 }
 
@@ -620,91 +365,95 @@
                     </div>
                 `).join('');
 
-                this.showMessage(`✅ Encontradas ${results.length} canciones`);
-                console.log(`✅ Mostrando ${results.length} resultados`);
+                this.showMessage(`✅ ${results.length} canciones encontradas`);
             }
 
-            playSong(videoId, title, artist) {
-                console.log(`🎵 Reproduciendo: ${title} (${videoId})`);
+            async playSong(videoId, title, artist) {
+                console.log(`🎵 Reproduciendo: ${title}`);
                 
                 this.currentTrack = { id: videoId, title, artist };
                 this.updatePlayer();
                 
-                if (this.isPlayerReady && this.youtubePlayer) {
-                    // Reproducir con YouTube Player integrado
-                    this.youtubePlayer.loadVideoById(videoId);
-                    this.youtubePlayer.playVideo();
+                try {
+                    // STREAM DIRECTO SIN ANUNCIOS (ReVanced style)
+                    const audioUrl = await this.getAudioStream(videoId);
+                    this.audioPlayer.src = audioUrl;
+                    this.audioPlayer.play();
                     this.isPlaying = true;
                     this.updatePlayButton();
                     this.showMessage(`🎵 Reproduciendo: ${title}`);
-                } else {
-                    this.showMessage('❌ Reproductor no listo. Recarga la página.');
+                } catch (error) {
+                    this.showMessage('❌ Error al reproducir');
                 }
+            }
+
+            async getAudioStream(videoId) {
+                // Stream de audio directo usando yt-dlp style
+                const services = [
+                    `https://pipedapi.kavin.rocks/streams/${videoId}`,
+                    `https://ytapi.deno.dev/api/v1/videos/${videoId}`
+                ];
+
+                for (const service of services) {
+                    try {
+                        const response = await fetch(service);
+                        const data = await response.json();
+                        return data.audioStreams?.[0]?.url || data.formatStreams?.[0]?.url;
+                    } catch (error) {
+                        continue;
+                    }
+                }
+                throw new Error('No se pudo obtener audio');
             }
 
             togglePlay() {
-                if (!this.currentTrack) {
-                    this.showMessage('🎵 Selecciona una canción primero');
-                    return;
+                if (!this.currentTrack) return this.showMessage('🎵 Selecciona una canción primero');
+                
+                if (this.isPlaying) {
+                    this.audioPlayer.pause();
+                    this.isPlaying = false;
+                } else {
+                    this.audioPlayer.play();
+                    this.isPlaying = true;
                 }
-
-                if (this.youtubePlayer) {
-                    if (this.isPlaying) {
-                        this.youtubePlayer.pauseVideo();
-                        this.isPlaying = false;
-                    } else {
-                        this.youtubePlayer.playVideo();
-                        this.isPlaying = true;
-                    }
-                    this.updatePlayButton();
-                }
+                this.updatePlayButton();
             }
 
             stopPlayback() {
-                if (this.youtubePlayer) {
-                    this.youtubePlayer.stopVideo();
-                    this.isPlaying = false;
-                    this.updatePlayButton();
-                    this.showMessage('⏹️ Detenido');
-                }
+                this.audioPlayer.pause();
+                this.audioPlayer.currentTime = 0;
+                this.isPlaying = false;
+                this.updatePlayButton();
             }
 
             updatePlayButton() {
-                const playButton = document.querySelector('.player-controls button');
-                if (playButton) {
-                    playButton.innerHTML = this.isPlaying ? '⏸️' : '▶️';
-                }
+                const btn = document.querySelector('.player-controls button');
+                if (btn) btn.innerHTML = this.isPlaying ? '⏸️' : '▶️';
             }
 
             addToPlaylist(song) {
                 if (!this.playlist.find(s => s.id === song.id)) {
                     this.playlist.push(song);
                     this.savePlaylist();
-                    this.showMessage(`✅ "${this.cleanTitle(song.title)}" añadida a playlist`);
-                    console.log('📋 Canción añadida a playlist:', song);
-                } else {
-                    this.showMessage('⚠️ Ya está en la playlist');
+                    this.showMessage(`✅ "${this.cleanTitle(song.title)}" añadida`);
                 }
             }
 
             loadPlaylist() {
                 const container = document.getElementById('playlist-songs');
-                
                 if (this.playlist.length === 0) {
-                    container.innerHTML = '<div class="no-results">📋 Tu playlist está vacía</div>';
+                    container.innerHTML = '<div class="loading">📋 Playlist vacía</div>';
                     return;
                 }
-
                 container.innerHTML = this.playlist.map(song => `
                     <div class="music-card">
                         <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
                         <div class="card-title">${song.title}</div>
                         <div class="card-artist">${song.artist}</div>
-                        <div class="card-duration">${song.duration}</div>
                         <button class="play-btn" onclick="app.playSong('${song.id}', '${song.title}', '${song.artist}')">
                             ▶️
                         </button>
-                        <button class="remove-btn" onclick="app.removeFromPlaylist('${song.id}')">
+                        <button class="add-btn" onclick="app.removeFromPlaylist('${song.id}')">
                             ❌
                         </button>
                     </div>
@@ -715,7 +464,6 @@
                 this.playlist = this.playlist.filter(song => song.id !== songId);
                 this.savePlaylist();
                 this.loadPlaylist();
-                this.showMessage('🗑️ Canción eliminada');
             }
 
             savePlaylist() {
@@ -729,24 +477,33 @@
                 }
             }
 
+            showSection(sectionId) {
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById(sectionId).classList.add('active');
+                
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+            }
+
             showLoading() {
                 document.getElementById('search-results').innerHTML = `
                     <div class="loading">
-                        <div class="spinner">🎵</div>
+                        <div>🎵</div>
                         <p>Buscando en YouTube ReVanced...</p>
                     </div>
                 `;
             }
 
+            showMessage(text) {
+                const msg = document.createElement('div');
+                msg.className = 'message';
+                msg.textContent = text;
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 3000);
+            }
+
             cleanTitle(title) {
-                return title
-                    .replace(/\(official music video\)/gi, '')
-                    .replace(/\(official audio\)/gi, '')
-                    .replace(/\(lyrics\)/gi, '')
-                    .replace(/\[.*\]/g, '')
-                    .replace(/\(.*\)/g, '')
-                    .replace(/\\u0026/g, '&')
-                    .trim();
+                return title.replace(/\([^)]*\)/g, '').replace(/\[[^\]]*\]/g, '').trim();
             }
 
             formatDuration(seconds) {
@@ -754,20 +511,9 @@
                 const secs = seconds % 60;
                 return `${mins}:${secs.toString().padStart(2, '0')}`;
             }
-
-            showMessage(message) {
-                const messageEl = document.createElement('div');
-                messageEl.className = 'message';
-                messageEl.textContent = message;
-                document.body.appendChild(messageEl);
-                
-                setTimeout(() => messageEl.remove(), 3000);
-            }
         }
 
-        // Inicializar la app
         const app = new MusicApp();
-        console.log("🚀 YouTube ReVanced activado - SIN ANUNCIOS");
     </script>
 </body>
 </html>
