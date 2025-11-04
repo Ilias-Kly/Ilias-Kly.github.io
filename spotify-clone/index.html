@@ -129,6 +129,7 @@
             cursor: pointer;
             transition: transform 0.2s, background 0.2s;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
         }
 
         .music-card:hover {
@@ -157,7 +158,76 @@
             font-size: 12px;
         }
 
-        /* Player en la parte inferior */
+        /* Estados de carga */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #b3b3b3;
+        }
+
+        .spinner {
+            font-size: 24px;
+            margin-bottom: 10px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #b3b3b3;
+            grid-column: 1 / -1;
+        }
+
+        /* Botones en las cards */
+        .play-btn, .add-btn, .remove-btn {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            color: white;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .play-btn {
+            bottom: 10px;
+            right: 10px;
+            background: #1DB954;
+        }
+
+        .add-btn {
+            top: 10px;
+            right: 10px;
+        }
+
+        .remove-btn {
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
+        }
+
+        .music-card:hover .play-btn,
+        .music-card:hover .add-btn,
+        .music-card:hover .remove-btn {
+            opacity: 1;
+        }
+
+        .card-duration {
+            font-size: 11px;
+            color: #b3b3b3;
+            margin-top: 5px;
+        }
+
+        /* Player bar con controles */
         .player-bar {
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
@@ -168,10 +238,13 @@
             bottom: 0;
             left: 0;
             right: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
         .player-info {
-            text-align: center;
+            flex: 1;
         }
 
         .player-title {
@@ -182,6 +255,16 @@
         .player-artist {
             color: #b3b3b3;
             font-size: 12px;
+        }
+
+        .player-controls button {
+            background: #1DB954;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -204,7 +287,7 @@
     <div class="main-content">
         <!-- Sección Inicio -->
         <div id="inicio" class="section active">
-            <h2>🎵 Busca tu música</h2>
+            <h2>🎵 Buscar</h2>
             <p>Escribe en la barra de arriba para encontrar canciones</p>
             <div id="search-results" class="music-grid">
                 <!-- Los resultados de búsqueda aparecerán aquí -->
@@ -226,8 +309,13 @@
             <div class="player-title">🎵 Selecciona una canción</div>
             <div class="player-artist">Tu música te espera</div>
         </div>
+        <div class="player-controls">
+            <button onclick="app.togglePlay()">▶️</button>
+            <button onclick="app.stopPlayback()">⏹️</button>
+        </div>
     </div>
 
+    <script src="app.js"></script>
     <script>
         // Función simple para cambiar entre secciones
         function showSection(sectionId) {
@@ -246,7 +334,7 @@
             event.target.classList.add('active');
         }
 
-        console.log("✅ Interfaz cargada - Etapa 1 completada");
+        console.log("✅ Interfaz cargada - Spotify SIN anuncios");
     </script>
 </body>
 </html>
