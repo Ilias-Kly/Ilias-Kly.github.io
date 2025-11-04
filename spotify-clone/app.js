@@ -1,4 +1,4 @@
-// app.js - VERSIÓN FUNCIONAL
+// app.js - REPRODUCCIÓN SIN ANUNCIOS
 class MusicApp {
     constructor() {
         this.currentTrack = null;
@@ -8,12 +8,14 @@ class MusicApp {
             'https://inv.tux.pizza',
             'https://invidious.snopyta.org'
         ];
+        this.audioPlayer = new Audio();
+        this.isPlaying = false;
         
         this.init();
     }
 
     init() {
-        console.log("🎵 Iniciando Mi Música App...");
+        console.log("🎵 Iniciando Mi Música App SIN ANUNCIOS...");
         this.setupEventListeners();
         this.loadPlaylist();
         this.setupServiceWorker();
@@ -27,6 +29,12 @@ class MusicApp {
         searchBtn.addEventListener('click', () => this.searchMusic());
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.searchMusic();
+        });
+
+        // Controles del reproductor
+        this.audioPlayer.addEventListener('ended', () => {
+            this.isPlaying = false;
+            this.updatePlayButton();
         });
 
         console.log("✅ Event listeners configurados");
@@ -43,7 +51,6 @@ class MusicApp {
         console.log(`🔍 Buscando: ${query}`);
 
         try {
-            // Intentar con cada API hasta que una funcione
             for (const apiBase of this.searchAPIs) {
                 try {
                     const results = await this.searchWithAPI(apiBase, query);
@@ -55,9 +62,7 @@ class MusicApp {
                     continue;
                 }
             }
-            
             throw new Error('Todas las APIs fallaron');
-            
         } catch (error) {
             console.error('Error en búsqueda:', error);
             this.showFallbackResults();
@@ -72,22 +77,20 @@ class MusicApp {
         
         const data = await response.json();
         
-        // Filtrar solo contenido musical
         return data
             .filter(item => 
                 item.type === 'video' && 
                 !item.title.toLowerCase().includes('podcast') &&
                 !item.title.toLowerCase().includes('live') &&
-                item.lengthSeconds > 120 // Más de 2 minutos
+                item.lengthSeconds > 120
             )
-            .slice(0, 12) // Limitar a 12 resultados
+            .slice(0, 12)
             .map(item => ({
                 id: item.videoId,
                 title: item.title,
                 artist: item.author,
                 duration: this.formatDuration(item.lengthSeconds),
-                thumbnail: item.videoThumbnails?.[3]?.url || item.videoThumbnails?.[0]?.url,
-                views: item.viewCount
+                thumbnail: item.videoThumbnails?.[3]?.url || item.videoThumbnails?.[0]?.url
             }));
     }
 
@@ -100,44 +103,105 @@ class MusicApp {
         }
 
         container.innerHTML = results.map(song => `
-            <div class="music-card" onclick="app.playSong('${song.id}')">
+            <div class="music-card">
                 <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
                 <div class="card-title">${this.cleanTitle(song.title)}</div>
                 <div class="card-artist">${song.artist}</div>
                 <div class="card-duration">${song.duration}</div>
-                <button class="add-btn" onclick="event.stopPropagation(); app.addToPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')})">
+                <button class="play-btn" onclick="app.playSong('${song.id}', '${song.title}', '${song.artist}')">
+                    ▶️
+                </button>
+                <button class="add-btn" onclick="app.addToPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')})">
                     ➕
                 </button>
             </div>
         `).join('');
-
-        console.log(`✅ Mostrando ${results.length} resultados`);
     }
 
-    playSong(videoId) {
-        console.log(`🎵 Reproduciendo: ${videoId}`);
+    async playSong(videoId, title, artist) {
+        console.log(`🎵 Reproduciendo: ${title}`);
         
-        // Buscar la canción en los resultados
-        const songElement = document.querySelector(`[onclick*="${videoId}"]`);
-        if (songElement) {
-            const title = songElement.querySelector('.card-title').textContent;
-            const artist = songElement.querySelector('.card-artist').textContent;
+        this.currentTrack = { id: videoId, title, artist };
+        this.updatePlayer();
+        
+        try {
+            // Usar servicio de audio directo (sin anuncios)
+            const audioUrl = await this.getAudioUrl(videoId);
             
-            this.currentTrack = { id: videoId, title, artist };
-            this.updatePlayer();
+            this.audioPlayer.src = audioUrl;
+            this.audioPlayer.play();
+            this.isPlaying = true;
+            this.updatePlayButton();
             
-            // Abrir YouTube para reproducir (solución funcional)
-            window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+            this.showMessage(`🎵 Reproduciendo: ${this.cleanTitle(title)}`);
+            
+        } catch (error) {
+            console.error('Error al reproducir:', error);
+            this.showMessage('❌ Error al reproducir. Probando alternativa...');
+            // Fallback: reproducir usando yt-audio.com
+            this.audioPlayer.src = `https://yt-audio.com/stream/${videoId}`;
+            this.audioPlayer.play();
         }
     }
 
+    async getAudioUrl(videoId) {
+        // Intentar diferentes servicios de audio
+        const audioServices = [
+            `https://corsproxy.io/?https://yt-audio.com/stream/${videoId}`,
+            `https://corsproxy.io/?https://yt-downloader.com/audio/${videoId}`,
+            `https://api.rss2json.com/v1/api.json?rss_url=https://www.youtube.com/feeds/videos.xml?channel_id=${videoId}`
+        ];
+
+        for (const service of audioServices) {
+            try {
+                const response = await fetch(service);
+                if (response.ok) {
+                    return service;
+                }
+            } catch (error) {
+                continue;
+            }
+        }
+        
+        throw new Error('No se pudo obtener audio');
+    }
+
+    togglePlay() {
+        if (!this.currentTrack) {
+            this.showMessage('🎵 Selecciona una canción primero');
+            return;
+        }
+
+        if (this.isPlaying) {
+            this.audioPlayer.pause();
+            this.isPlaying = false;
+        } else {
+            this.audioPlayer.play();
+            this.isPlaying = true;
+        }
+        this.updatePlayButton();
+    }
+
+    updatePlayButton() {
+        // Aquí puedes actualizar el botón de play/pause en la UI
+        const playButton = document.querySelector('.player-controls button');
+        if (playButton) {
+            playButton.innerHTML = this.isPlaying ? '⏸️' : '▶️';
+        }
+    }
+
+    stopPlayback() {
+        this.audioPlayer.pause();
+        this.audioPlayer.currentTime = 0;
+        this.isPlaying = false;
+        this.updatePlayButton();
+    }
+
     addToPlaylist(song) {
-        // Evitar duplicados
         if (!this.playlist.find(s => s.id === song.id)) {
             this.playlist.push(song);
             this.savePlaylist();
             this.showMessage(`✅ "${this.cleanTitle(song.title)}" añadida a playlist`);
-            console.log('📋 Canción añadida a playlist:', song);
         } else {
             this.showMessage('⚠️ Ya está en la playlist');
         }
@@ -152,12 +216,15 @@ class MusicApp {
         }
 
         container.innerHTML = this.playlist.map(song => `
-            <div class="music-card" onclick="app.playSong('${song.id}')">
+            <div class="music-card">
                 <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
                 <div class="card-title">${this.cleanTitle(song.title)}</div>
                 <div class="card-artist">${song.artist}</div>
                 <div class="card-duration">${song.duration}</div>
-                <button class="remove-btn" onclick="event.stopPropagation(); app.removeFromPlaylist('${song.id}')">
+                <button class="play-btn" onclick="app.playSong('${song.id}', '${song.title}', '${song.artist}')">
+                    ▶️
+                </button>
+                <button class="remove-btn" onclick="app.removeFromPlaylist('${song.id}')">
                     ❌
                 </button>
             </div>
@@ -232,7 +299,6 @@ class MusicApp {
     }
 
     showMessage(message) {
-        // Mensaje temporal en la interfaz
         const messageEl = document.createElement('div');
         messageEl.style.cssText = `
             position: fixed;
@@ -266,4 +332,3 @@ class MusicApp {
 
 // Inicializar la app
 const app = new MusicApp();
-console.log("🚀 Mi Música App completamente inicializada");
