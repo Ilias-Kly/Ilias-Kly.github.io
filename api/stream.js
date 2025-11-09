@@ -1,59 +1,86 @@
-// api/stream.js - VERSIÓN CORREGIDA PARA VERCEL
+// api/stream.js
 import ytdl from 'ytdl-core';
 
-export default async function handler(request, response) {
-  // Configurar CORS
-  response.setHeader('Access-Control-Allow-Origin', '*');
-  response.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+const allowCors = (fn) => async (req, res) => {
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-  // Manejar preflight OPTIONS
-  if (request.method === 'OPTIONS') {
-    return response.status(200).end();
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
   }
 
-  // Solo permitir método GET
-  if (request.method !== 'GET') {
-    return response.status(405).json({ error: 'Método no permitido' });
-  }
+  return await fn(req, res);
+};
 
-  const { id } = request.query;
-
-  if (!id) {
-    return response.status(400).json({ error: 'ID de video requerido' });
-  }
-
-  // Validar formato del ID de YouTube
-  if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) {
-    return response.status(400).json({ error: 'ID de video inválido' });
-  }
-
+async function streamHandler(req, res) {
   try {
-    console.log(`🎵 Obteniendo audio para: ${id}`);
-    
+    const { id } = req.query;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Video ID is required'
+      });
+    }
+
+    // Validate YouTube video ID format
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid video ID format'
+      });
+    }
+
+    console.log(`🎵 Getting audio for: ${id}`);
+
     const info = await ytdl.getInfo(id);
-    const audioFormat = ytdl.chooseFormat(info.formats, { 
+    const audioFormat = ytdl.chooseFormat(info.formats, {
       quality: 'highestaudio',
       filter: 'audioonly'
     });
-    
+
     if (!audioFormat) {
-      return response.status(404).json({ error: 'No se encontró formato de audio disponible' });
+      return res.status(404).json({
+        success: false,
+        error: 'No audio format available for this video'
+      });
     }
-    
-    console.log(`✅ Audio obtenido para: ${id}`);
-    return response.status(200).json({ 
+
+    console.log(`✅ Audio obtained for: ${id}`);
+
+    return res.status(200).json({
+      success: true,
       url: audioFormat.url,
       title: info.videoDetails.title,
-      duration: info.videoDetails.lengthSeconds
+      artist: info.videoDetails.author?.name || 'Unknown Artist',
+      duration: parseInt(info.videoDetails.lengthSeconds),
+      thumbnail: info.videoDetails.thumbnails[0]?.url
     });
-    
+
   } catch (error) {
-    console.error('❌ Error obteniendo audio:', error);
-    
-    return response.status(500).json({ 
-      error: 'Error al obtener el stream de audio',
-      message: error.message 
+    console.error('❌ Stream error:', error);
+
+    // Handle specific ytdl errors
+    if (error.message.includes('Video unavailable')) {
+      return res.status(404).json({
+        success: false,
+        error: 'Video not available or private'
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to get audio stream',
+      message: error.message
     });
   }
 }
+
+// Export the handler with CORS
+export default allowCors(streamHandler);
