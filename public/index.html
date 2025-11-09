@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MusicApp - Spotify Clone</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1DB954">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h2>🎵 MusicApp</h2>
+            </div>
+            <nav class="nav">
+                <a href="#" class="nav-item active" data-section="home">
+                    <span>🏠</span> <span class="nav-text">Inicio</span>
+                </a>
+                <a href="#" class="nav-item" data-section="search">
+                    <span>🔍</span> <span class="nav-text">Buscar</span>
+                </a>
+                <a href="#" class="nav-item" data-section="library">
+                    <span>📚</span> <span class="nav-text">Tu Biblioteca</span>
+                </a>
+                <a href="#" class="nav-item" data-section="playlists">
+                    <span>🎵</span> <span class="nav-text">Playlists</span>
+                </a>
+            </nav>
+            
+            <!-- Playlists creadas -->
+            <div class="user-playlists">
+                <h3>Tu Música</h3>
+                <div id="playlists-list" class="playlists-list">
+                    <!-- Playlists se cargarán aquí -->
+                </div>
+                <button id="create-playlist-btn" class="create-playlist-btn">
+                    + Crear playlist
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Home Section -->
+            <div class="section active" id="home-section">
+                <div class="header">
+                    <h1>Bienvenido a MusicApp</h1>
+                    <p>Disfruta de música ilimitada desde YouTube</p>
+                </div>
+                
+                <div class="featured-playlists">
+                    <h2>Playlists Destacadas</h2>
+                    <div class="playlists-grid">
+                        <div class="playlist-card" data-genre="pop">
+                            <div class="playlist-image">🎤</div>
+                            <h3>Pop Hits</h3>
+                            <p>Lo mejor del pop actual</p>
+                        </div>
+                        <div class="playlist-card" data-genre="rock">
+                            <div class="playlist-image">🎸</div>
+                            <h3>Rock Classics</h3>
+                            <p>Los clásicos del rock</p>
+                        </div>
+                        <div class="playlist-card" data-genre="electronic">
+                            <div class="playlist-image">🎧</div>
+                            <h3>Electronic Vibes</h3>
+                            <p>Música electrónica para concentrarte</p>
+                        </div>
+                        <div class="playlist-card" data-genre="chill">
+                            <div class="playlist-image">🌙</div>
+                            <h3>Chill Out</h3>
+                            <p>Relájate con esta selección</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-searches">
+                    <h2>Búsquedas Recientes</h2>
+                    <div id="recent-searches-list" class="tags-container">
+                        <!-- Búsquedas recientes -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="section" id="search-section">
+                <div class="search-header">
+                    <h1>Buscar Música</h1>
+                    <div class="search-container">
+                        <div class="search-input-container">
+                            <input type="text" id="search-input" placeholder="Buscar canciones, artistas, álbumes...">
+                            <button id="search-btn" class="search-button">
+                                <span>🔍</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="search-filters">
+                    <button class="filter-btn active" data-filter="all">Todo</button>
+                    <button class="filter-btn" data-filter="music">Música</button>
+                    <button class="filter-btn" data-filter="artist">Artistas</button>
+                    <button class="filter-btn" data-filter="playlist">Playlists</button>
+                </div>
+
+                <div id="search-results" class="results-container">
+                    <div class="empty-state">
+                        <div class="empty-icon">🎵</div>
+                        <h3>Encuentra tu música</h3>
+                        <p>Busca tus canciones y artistas favoritos</p>
+                    </div>
+                </div>
+
+                <div id="loading-indicator" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p>Buscando música...</p>
+                </div>
+            </div>
+
+            <!-- Library Section -->
+            <div class="section" id="library-section">
+                <div class="library-header">
+                    <h1>Tu Biblioteca</h1>
+                    <div class="library-actions">
+                        <button id="show-favorites" class="tab-btn active">Favoritos</button>
+                        <button id="show-history" class="tab-btn">Historial</button>
+                    </div>
+                </div>
+
+                <div class="library-content">
+                    <div id="favorites-content" class="tab-content active">
+                        <h3>Tus Canciones Favoritas</h3>
+                        <div id="favorites-list" class="tracks-list">
+                            <!-- Canciones favoritas -->
+                        </div>
+                    </div>
+
+                    <div id="history-content" class="tab-content">
+                        <h3>Historial de Reproducción</h3>
+                        <div id="history-list" class="tracks-list">
+                            <!-- Historial -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Playlists Section -->
+            <div class="section" id="playlists-section">
+                <div class="playlists-header">
+                    <h1>Tus Playlists</h1>
+                    <button id="create-new-playlist" class="create-btn">
+                        + Nueva Playlist
+                    </button>
+                </div>
+
+                <div id="user-playlists" class="playlists-grid">
+                    <!-- Playlists del usuario -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Player -->
+    <div class="player" id="audio-player">
+        <div class="player-main">
+            <div class="now-playing">
+                <div class="track-image" id="track-image">🎵</div>
+                <div class="track-info">
+                    <div id="track-title" class="track-title">No hay música reproduciéndose</div>
+                    <div id="track-artist" class="track-artist">Selecciona una canción</div>
+                </div>
+                <button id="like-btn" class="like-btn">🤍</button>
+            </div>
+
+            <div class="player-controls">
+                <button id="shuffle-btn" class="control-btn" title="Shuffle">🔀</button>
+                <button id="prev-btn" class="control-btn" title="Anterior">⏮</button>
+                <button id="play-btn" class="play-pause-btn" title="Reproducir">▶</button>
+                <button id="next-btn" class="control-btn" title="Siguiente">⏭</button>
+                <button id="repeat-btn" class="control-btn" title="Repetir">🔁</button>
+            </div>
+
+            <div class="progress-section">
+                <div class="progress-container">
+                    <input type="range" id="progress-bar" class="progress-bar" min="0" max="100" value="0">
+                    <div class="time-display">
+                        <span id="current-time">0:00</span>
+                        <span id="duration">0:00</span>
+                    </div>
+                </div>
+                <div class="volume-container">
+                    <button id="volume-btn" class="volume-btn" title="Volumen">🔊</button>
+                    <input type="range" id="volume-control" class="volume-control" min="0" max="100" value="80">
+                </div>
+            </div>
+        </div>
+
+        <audio id="audio-element" crossorigin="anonymous"></audio>
+    </div>
+
+    <!-- Modal para crear playlist -->
+    <div id="playlist-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Crear Nueva Playlist</h3>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="playlist-name" placeholder="Nombre de la playlist" maxlength="50">
+                <div class="modal-actions">
+                    <button id="cancel-create" class="btn-secondary">Cancelar</button>
+                    <button id="confirm-create" class="btn-primary">Crear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="app.js"></script>
+    
+    <script>
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html>
