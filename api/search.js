@@ -1,114 +1,82 @@
-// api/search.js
 import fetch from 'node-fetch';
 
-const allowCors = (fn) => async (req, res) => {
-  res.setHeader('Access-Control-Allow-Credentials', true);
+export default async function handler(req, res) {
+  const { q } = req.query;
+  
+  // Evitar CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  return await fn(req, res);
-};
-
-async function searchHandler(req, res) {
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  
   try {
-    const { q } = req.query;
-
-    if (!q) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Query parameter is required' 
-      });
-    }
-
-    console.log(`🔍 Searching: ${q}`);
-
-    // Try Piped API first
-    let results = [];
-    try {
-      const pipedResponse = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(q)}&filter=music`);
-      
-      if (pipedResponse.ok) {
-        const pipedData = await pipedResponse.json();
-        
-        results = pipedData.items
-          ?.filter(item => item.type === 'stream' && item.duration > 60)
-          ?.slice(0, 12)
-          ?.map(item => ({
-            id: item.url.split('/').pop(),
-            title: item.title,
-            artist: item.uploaderName,
-            duration: formatDuration(item.duration),
-            thumbnail: item.thumbnail
-          })) || [];
-      }
-    } catch (pipedError) {
-      console.log('Piped API failed, trying fallback...');
-    }
-
-    // Fallback to YouTube API
-    if (results.length === 0) {
-      try {
-        const fallbackResponse = await fetch(`https://ytapi.deno.dev/api/v1/search?q=${encodeURIComponent(q)}&type=video`);
-        
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json();
-          
-          results = fallbackData
-            ?.filter(item => item.type === 'video' && item.lengthSeconds > 60)
-            ?.slice(0, 10)
-            ?.map(item => ({
-              id: item.videoId,
-              title: item.title,
-              artist: item.author,
-              duration: formatDuration(item.lengthSeconds),
-              thumbnail: item.videoThumbnails?.[3]?.url || item.videoThumbnails?.[0]?.url
-            })) || [];
-        }
-      } catch (fallbackError) {
-        console.log('Fallback API also failed');
-      }
-    }
-
-    if (results.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'No results found',
-        results: []
-      });
-    }
-
-    console.log(`✅ Found ${results.length} results for: ${q}`);
+    // Usar una API pública o scraping simple
+    const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+    const response = await fetch(searchUrl);
+    const html = await response.text();
     
-    return res.status(200).json({
-      success: true,
-      results: results
-    });
-
+    // Extraer IDs de videos del HTML (simplificado)
+    const videoIds = extractVideoIds(html);
+    const results = await getVideoDetails(videoIds);
+    
+    res.json({ success: true, results });
   } catch (error) {
-    console.error('❌ Search error:', error);
-    
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error',
-      message: error.message
+    res.json({ 
+      success: false, 
+      error: error.message,
+      // Datos de ejemplo para desarrollo
+      results: generateMockResults(q)
     });
   }
 }
 
-function formatDuration(seconds) {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+function extractVideoIds(html) {
+  // Expresión regular simple para extraer video IDs
+  const regex = /"videoId":"([a-zA-Z0-9_-]{11})"/g;
+  const matches = [...html.matchAll(regex)];
+  return [...new Set(matches.map(match => match[1]))].slice(0, 10);
 }
 
-// Export the handler with CORS
-export default allowCors(searchHandler);
+async function getVideoDetails(videoIds) {
+  // Usar oembed para obtener detalles básicos
+  const promises = videoIds.map(async (id) => {
+    try {
+      const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`);
+      const data = await response.json();
+      return {
+        id,
+        title: data.title,
+        artist: data.author_name,
+        thumbnail: data.thumbnail_url,
+        duration: '3:45' // Placeholder
+      };
+    } catch (error) {
+      return {
+        id,
+        title: `Video ${id}`,
+        artist: 'Unknown Artist',
+        thumbnail: '',
+        duration: '0:00'
+      };
+    }
+  });
+  
+  return Promise.all(promises);
+}
+
+function generateMockResults(query) {
+  return [
+    {
+      id: 'dQw4w9WgXcQ',
+      title: `${query} - Example 1`,
+      artist: 'Artist 1',
+      thumbnail: '',
+      duration: '3:45'
+    },
+    {
+      id: 'dQw4w9WgXcQ',
+      title: `${query} - Example 2`,
+      artist: 'Artist 2',
+      thumbnail: '',
+      duration: '4:20'
+    }
+  ];
+}
