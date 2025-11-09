@@ -1,1 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Clone 🎵</title>
+    <style>
+        :root {
+            --negro: #000000;
+            --verde: #1DB954;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--negro);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .search-box {
+            display: flex;
+            max-width: 500px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            border-radius: 25px;
+            overflow: hidden;
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 15px 20px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .search-btn {
+            background: var(--verde);
+            border: none;
+            padding: 0 25px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        /* Navegación */
+        .nav {
+            display: flex;
+            background: var(--negro);
+            border-bottom: 1px solid #333;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 15px;
+            background: none;
+            border: none;
+            color: #b3b3b3;
+            cursor: pointer;
+        }
+
+        .nav-btn.active {
+            color: white;
+            border-bottom: 2px solid var(--verde);
+        }
+
+        /* Contenido */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Grid de música */
+        .music-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .music-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .music-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card-cover {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #333;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-size: cover;
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-artist {
+            color: #b3b3b3;
+            font-size: 12px;
+        }
+
+        .play-btn, .add-btn {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .play-btn {
+            bottom: 10px;
+            right: 10px;
+            background: var(--verde);
+        }
+
+        .add-btn {
+            top: 10px;
+            right: 10px;
+        }
+
+        .music-card:hover .play-btn,
+        .music-card:hover .add-btn {
+            opacity: 1;
+        }
+
+        /* Player */
+        .player {
+            background: #181818;
+            padding: 15px 20px;
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .player-artist {
+            color: #b3b3b3;
+            font-size: 12px;
+        }
+
+        .player-controls button {
+            background: var(--verde);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        /* Estados */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #b3b3b3;
+        }
+
+        .message {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--verde);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <div class="header">
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="🔍 Buscar música...">
+                <button class="search-btn">🎵</button>
+            </div>
+        </div>
+
+        <!-- Navegación -->
+        <div class="nav">
+            <button class="nav-btn active" data-section="inicio">🏠 Inicio</button>
+            <button class="nav-btn" data-section="playlist">📋 Playlist</button>
+        </div>
+
+        <!-- Contenido -->
+        <div class="content">
+            <!-- Inicio -->
+            <div id="inicio" class="section active">
+                <h2>🎵 Busca tu música</h2>
+                <div id="search-results" class="music-grid"></div>
+            </div>
+
+            <!-- Playlist -->
+            <div id="playlist" class="section">
+                <h2>📋 Tu Playlist</h2>
+                <div id="playlist-songs" class="music-grid"></div>
+            </div>
+        </div>
+
+        <!-- Player -->
+        <div class="player">
+            <div class="player-info">
+                <div class="player-title" id="current-title">Selecciona una canción</div>
+                <div class="player-artist" id="current-artist">Para comenzar a reproducir</div>
+            </div>
+            <div class="player-controls">
+                <button id="play-btn">▶️</button>
+                <button id="stop-btn">⏹️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MusicApp {
+            constructor() {
+                this.API_BASE = "https://TU_APP.vercel.app/api"; // ← Cambiar por tu URL
+                this.currentTrack = null;
+                this.playlist = JSON.parse(localStorage.getItem('playlist')) || [];
+                this.isPlaying = false;
+                this.audioPlayer = new Audio();
+                
+                this.init();
+            }
+
+            init() {
+                console.log("🎵 Iniciando Spotify Clone...");
+                this.setupEventListeners();
+                this.loadPlaylist();
+            }
+
+            setupEventListeners() {
+                // Búsqueda
+                document.querySelector('.search-btn').addEventListener('click', () => this.searchMusic());
+                document.querySelector('.search-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.searchMusic();
+                });
+
+                // Navegación
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.showSection(e.target.dataset.section));
+                });
+
+                // Controles
+                document.getElementById('play-btn').addEventListener('click', () => this.togglePlay());
+                document.getElementById('stop-btn').addEventListener('click', () => this.stopPlayback());
+
+                // Audio events
+                this.audioPlayer.addEventListener('ended', () => {
+                    this.isPlaying = false;
+                    this.updatePlayButton();
+                });
+            }
+
+            async searchMusic() {
+                const query = document.querySelector('.search-input').value.trim();
+                if (!query) return this.showMessage('Escribe algo para buscar');
+
+                this.showLoading();
+                
+                try {
+                    const response = await fetch(`${this.API_BASE}/search?q=${encodeURIComponent(query)}`);
+                    const results = await response.json();
+                    
+                    if (results.error) throw new Error(results.error);
+                    
+                    this.displaySearchResults(results);
+                    this.showMessage(`✅ ${results.length} canciones encontradas`);
+                } catch (error) {
+                    console.error('Error:', error);
+                    this.showMessage('❌ Error en la búsqueda');
+                }
+            }
+
+            displaySearchResults(results) {
+                const container = document.getElementById('search-results');
+                
+                if (!results || results.length === 0) {
+                    container.innerHTML = '<div class="loading">No se encontraron resultados</div>';
+                    return;
+                }
+
+                container.innerHTML = results.map(song => `
+                    <div class="music-card">
+                        <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
+                        <div class="card-title">${this.cleanTitle(song.title)}</div>
+                        <div class="card-artist">${song.artist}</div>
+                        <button class="play-btn" onclick="app.playSong('${song.id}', '${song.title}', '${song.artist}')">
+                            ▶️
+                        </button>
+                        <button class="add-btn" onclick="app.addToPlaylist(${JSON.stringify(song).replace(/"/g, '&quot;')})">
+                            ➕
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            async playSong(videoId, title, artist) {
+                console.log(`🎵 Reproduciendo: ${title}`);
+                
+                this.currentTrack = { id: videoId, title, artist };
+                this.updatePlayer();
+                
+                try {
+                    const response = await fetch(`${this.API_BASE}/stream?id=${videoId}`);
+                    const data = await response.json();
+                    
+                    if (data.error) throw new Error(data.error);
+                    
+                    this.audioPlayer.src = data.url;
+                    this.audioPlayer.play();
+                    this.isPlaying = true;
+                    this.updatePlayButton();
+                    this.showMessage(`🎵 Reproduciendo: ${title}`);
+                } catch (error) {
+                    console.error('Error reproducción:', error);
+                    this.showMessage('❌ Error al reproducir');
+                }
+            }
+
+            togglePlay() {
+                if (!this.currentTrack) return this.showMessage('Selecciona una canción primero');
+                
+                if (this.isPlaying) {
+                    this.audioPlayer.pause();
+                    this.isPlaying = false;
+                } else {
+                    this.audioPlayer.play();
+                    this.isPlaying = true;
+                }
+                this.updatePlayButton();
+            }
+
+            stopPlayback() {
+                this.audioPlayer.pause();
+                this.audioPlayer.currentTime = 0;
+                this.isPlaying = false;
+                this.updatePlayButton();
+                this.showMessage('⏹️ Detenido');
+            }
+
+            updatePlayButton() {
+                const btn = document.getElementById('play-btn');
+                btn.innerHTML = this.isPlaying ? '⏸️' : '▶️';
+            }
+
+            addToPlaylist(song) {
+                if (!this.playlist.find(s => s.id === song.id)) {
+                    this.playlist.push(song);
+                    this.savePlaylist();
+                    this.showMessage(`✅ "${this.cleanTitle(song.title)}" añadida`);
+                } else {
+                    this.showMessage('⚠️ Ya está en la playlist');
+                }
+            }
+
+            loadPlaylist() {
+                const container = document.getElementById('playlist-songs');
+                if (this.playlist.length === 0) {
+                    container.innerHTML = '<div class="loading">Playlist vacía</div>';
+                    return;
+                }
+                
+                container.innerHTML = this.playlist.map(song => `
+                    <div class="music-card">
+                        <div class="card-cover" style="background-image: url('${song.thumbnail}')"></div>
+                        <div class="card-title">${song.title}</div>
+                        <div class="card-artist">${song.artist}</div>
+                        <button class="play-btn" onclick="app.playSong('${song.id}', '${song.title}', '${song.artist}')">
+                            ▶️
+                        </button>
+                        <button class="add-btn" onclick="app.removeFromPlaylist('${song.id}')">
+                            ❌
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            removeFromPlaylist(songId) {
+                this.playlist = this.playlist.filter(song => song.id !== songId);
+                this.savePlaylist();
+                this.loadPlaylist();
+                this.showMessage('🗑️ Canción eliminada');
+            }
+
+            savePlaylist() {
+                localStorage.setItem('playlist', JSON.stringify(this.playlist));
+            }
+
+            updatePlayer() {
+                if (this.currentTrack) {
+                    document.getElementById('current-title').textContent = this.currentTrack.title;
+                    document.getElementById('current-artist').textContent = this.currentTrack.artist;
+                }
+            }
+
+            showSection(sectionId) {
+                document.querySelectorAll('.section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(sectionId).classList.add('active');
+                
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+            }
+
+            showLoading() {
+                document.getElementById('search-results').innerHTML = `
+                    <div class="loading">
+                        <div>🎵</div>
+                        <p>Buscando música...</p>
+                    </div>
+                `;
+            }
+
+            showMessage(text) {
+                const msg = document.createElement('div');
+                msg.className = 'message';
+                msg.textContent = text;
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 3000);
+            }
+
+            cleanTitle(title) {
+                return title
+                    .replace(/\(official music video\)/gi, '')
+                    .replace(/\(official audio\)/gi, '')
+                    .replace(/\(lyrics\)/gi, '')
+                    .replace(/\[.*\]/g, '')
+                    .replace(/\(.*\)/g, '')
+                    .trim();
+            }
+        }
+
+        // Inicializar app
+        const app = new MusicApp();
+    </script>
+</body>
+</html>
