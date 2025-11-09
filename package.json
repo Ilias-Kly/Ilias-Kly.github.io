@@ -1,13 +1,25 @@
 {
   "name": "spotify-clone",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Un clon de Spotify simple que usa audio de YouTube",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node server.js",
+    "deploy": "vercel --prod"
+  },
   "dependencies": {
     "node-fetch": "^3.3.0",
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "ytdl-core": "^4.11.5",
+    "youtube-search-api": "^1.1.0"
   },
-  "scripts": {
-    "dev": "vercel dev",
-    "deploy": "vercel --prod"
-  }
+  "engines": {
+    "node": ">=18.x"
+  },
+  "keywords": ["music", "pwa", "youtube", "spotify-clone"],
+  "author": "Tu Nombre",
+  "license": "MIT"
 }
