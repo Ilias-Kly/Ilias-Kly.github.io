@@ -1,8 +1,10 @@
-import { getAudioStream } from '../../utils/youtube.js';
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
+  // Configurar CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -14,60 +16,40 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Video ID is required' });
   }
 
-  // Handle mock IDs for development
+  // Manejar IDs mock para desarrollo
   if (id.startsWith('mock')) {
     return handleMockStream(req, res, id);
   }
 
   try {
-    console.log(`Streaming audio for video: ${id}`);
+    console.log(`Solicitando stream para: ${id}`);
     
-    const audioInfo = await getAudioStream(id);
-    
-    if (!audioInfo || !audioInfo.url) {
-      return res.status(404).json({ error: 'Audio not found' });
-    }
-
-    // Set appropriate headers for audio streaming
-    res.setHeader('Content-Type', audioInfo.mimeType || 'audio/mpeg');
-    res.setHeader('Accept-Ranges', 'bytes');
-    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
-
-    // If it's a direct URL, redirect to it
-    if (audioInfo.isDirect) {
-      return res.redirect(302, audioInfo.url);
-    }
-
-    // Otherwise, proxy the audio stream
-    const audioResponse = await fetch(audioInfo.url);
-    
-    if (!audioResponse.ok) {
-      throw new Error(`Failed to fetch audio: ${audioResponse.statusText}`);
-    }
-
-    // Pipe the audio stream to response
-    const arrayBuffer = await audioResponse.arrayBuffer();
-    res.setHeader('Content-Length', arrayBuffer.byteLength);
-    res.send(Buffer.from(arrayBuffer));
+    // En una implementación real, aquí procesarías el audio de YouTube
+    // Por ahora retornamos información del track
+    res.json({
+      success: true,
+      id: id,
+      message: "Stream endpoint - En producción aquí iría el audio real",
+      note: "Para audio real, necesitarías implementar yt-dlp o similar en un servidor con más capacidades",
+      audioUrl: `https://www.youtube.com/watch?v=${id}`
+    });
 
   } catch (error) {
-    console.error('Stream error:', error);
+    console.error('Error en stream:', error);
     res.status(500).json({ 
-      error: 'Failed to stream audio',
+      success: false,
+      error: 'Failed to process audio stream',
       details: error.message 
     });
   }
 }
 
 function handleMockStream(req, res, id) {
-  // Return a mock audio response for development
-  res.setHeader('Content-Type', 'audio/mpeg');
-  res.setHeader('Cache-Control', 'no-cache');
-  
-  // You could return a short silent MP3 or mock audio
   res.json({ 
-    message: 'Mock audio stream',
+    success: true,
+    message: 'Mock audio stream para desarrollo',
     id: id,
-    note: 'In production, this would be real audio from YouTube'
+    note: 'En producción, este sería audio real de YouTube',
+    audioUrl: '#'
   });
 }
