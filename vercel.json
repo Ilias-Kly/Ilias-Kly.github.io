@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "functions": {
     "api/*.js": {
       "runtime": "nodejs18.x"
@@ -9,7 +10,8 @@
       "source": "/api/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS" }
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
       ]
     }
   ]
