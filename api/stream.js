@@ -1,86 +1,34 @@
-// api/stream.js
-import ytdl from 'ytdl-core';
+import fetch from 'node-fetch';
 
-const allowCors = (fn) => async (req, res) => {
-  res.setHeader('Access-Control-Allow-Credentials', true);
+export default async function handler(req, res) {
+  const { id } = req.query;
+  
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  return await fn(req, res);
-};
-
-async function streamHandler(req, res) {
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  
   try {
-    const { id } = req.query;
-
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        error: 'Video ID is required'
-      });
+    // Usar yt-dlp-wrap o similar (pero en Vercel necesitas una solución ligera)
+    const audioUrl = await getAudioUrl(id);
+    
+    if (audioUrl) {
+      // Redirigir al audio directo
+      res.redirect(302, audioUrl);
+    } else {
+      res.json({ error: 'No se pudo obtener el audio' });
     }
-
-    // Validate YouTube video ID format
-    if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid video ID format'
-      });
-    }
-
-    console.log(`🎵 Getting audio for: ${id}`);
-
-    const info = await ytdl.getInfo(id);
-    const audioFormat = ytdl.chooseFormat(info.formats, {
-      quality: 'highestaudio',
-      filter: 'audioonly'
-    });
-
-    if (!audioFormat) {
-      return res.status(404).json({
-        success: false,
-        error: 'No audio format available for this video'
-      });
-    }
-
-    console.log(`✅ Audio obtained for: ${id}`);
-
-    return res.status(200).json({
-      success: true,
-      url: audioFormat.url,
-      title: info.videoDetails.title,
-      artist: info.videoDetails.author?.name || 'Unknown Artist',
-      duration: parseInt(info.videoDetails.lengthSeconds),
-      thumbnail: info.videoDetails.thumbnails[0]?.url
-    });
-
   } catch (error) {
-    console.error('❌ Stream error:', error);
-
-    // Handle specific ytdl errors
-    if (error.message.includes('Video unavailable')) {
-      return res.status(404).json({
-        success: false,
-        error: 'Video not available or private'
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to get audio stream',
-      message: error.message
-    });
+    res.json({ error: error.message });
   }
 }
 
-// Export the handler with CORS
-export default allowCors(streamHandler);
+async function getAudioUrl(videoId) {
+  // Opción 1: Usar servicios públicos (pueden dejar de funcionar)
+  try {
+    const response = await fetch(`https://api.example.com/youtube/${videoId}`);
+    const data = await response.json();
+    return data.audioUrl;
+  } catch (error) {
+    // Opción 2: Usar URLs directas (limitado)
+    return `https://www.youtube.com/watch?v=${videoId}`;
+  }
+}
