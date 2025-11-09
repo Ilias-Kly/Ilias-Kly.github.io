@@ -314,26 +314,16 @@
                 });
             }
 
-            async searchMusic() {
-                const query = document.querySelector('.search-input').value.trim();
-                if (!query) return this.showMessage('Escribe algo para buscar');
-
-                this.showLoading();
-                
-                try {
-                    const response = await fetch(`${this.API_BASE}/search?q=${encodeURIComponent(query)}`);
-                    const results = await response.json();
-                    
-                    if (results.error) throw new Error(results.error);
-                    
-                    this.displaySearchResults(results);
-                    this.showMessage(`✅ ${results.length} canciones encontradas`);
-                } catch (error) {
-                    console.error('Error:', error);
-                    this.showMessage('❌ Error en la búsqueda');
-                }
-            }
-
+           async searchMusic(query) {
+  const response = await fetch(`${this.API_BASE}/search?q=${encodeURIComponent(query)}`);
+  const data = await response.json();
+  
+  if (data.success) {
+    return data.results;
+  } else {
+    throw new Error(data.error);
+  }
+}
             displaySearchResults(results) {
                 const container = document.getElementById('search-results');
                 
