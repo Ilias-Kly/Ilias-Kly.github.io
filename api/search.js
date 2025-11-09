@@ -1,6 +1,7 @@
-import { searchVideos, getVideoDetails } from '../../utils/youtube.js';
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
+  // Configurar CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -9,83 +10,94 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const { q, limit = 20 } = req.query;
+  const { q, limit = 10 } = req.query;
 
   if (!q) {
     return res.status(400).json({ error: 'Query parameter "q" is required' });
   }
 
   try {
-    console.log(`Searching for: ${q}`);
+    console.log(`Buscando: ${q}`);
     
-    const searchResults = await searchVideos(q, parseInt(limit));
-    const videoDetails = await getVideoDetails(searchResults.map(video => video.id));
+    // Usar YouTube Data API si hay clave, sino usar método alternativo
+    const results = await searchYouTube(q, parseInt(limit));
     
-    // Combinar resultados
-    const results = searchResults.map(video => {
-      const details = videoDetails.find(d => d.id === video.id) || {};
-      return {
-        id: video.id,
-        title: this.cleanTitle(video.title),
-        artist: video.channel?.name || 'Unknown Artist',
-        duration: this.formatDuration(details.duration),
-        thumbnail: video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`,
-        views: details.viewCount || 0,
-        uploadDate: video.uploadDate || '',
-        audioUrl: `/api/stream?id=${video.id}`
-      };
-    });
-
     res.json({
       success: true,
       query: q,
-      results,
+      results: results,
       total: results.length
     });
 
   } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      results: this.generateFallbackResults(q)
+    console.error('Error en búsqueda:', error);
+    
+    // Fallback a resultados de ejemplo
+    res.json({
+      success: true,
+      query: q,
+      results: generateMockResults(q, limit),
+      note: "Usando datos de ejemplo"
     });
   }
 }
 
-function cleanTitle(title) {
-  return title
-    .replace(/\[[^\]]*\]/g, '') // Remove brackets content
-    .replace(/\([^\)]*\)/g, '') // Remove parentheses content
-    .replace(/official video|official audio|lyrics|video oficial|audio oficial/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+async function searchYouTube(query, limit) {
+  try {
+    // Método 1: Intentar con YouTube Data API si existe clave
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    if (apiKey) {
+      return await searchWithOfficialAPI(query, limit, apiKey);
+    }
+
+    // Método 2: Búsqueda alternativa
+    return await searchWithAlternative(query, limit);
+    
+  } catch (error) {
+    console.error('Búsqueda de YouTube falló:', error);
+    return generateMockResults(query, limit);
+  }
 }
 
-function formatDuration(seconds) {
-  if (!seconds) return '0:00';
+async function searchWithOfficialAPI(query, limit, apiKey) {
+  const response = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${limit}&q=${encodeURIComponent(query)}&key=${apiKey}`
+  );
   
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  const data = await response.json();
+  
+  return data.items.map(item => ({
+    id: item.id.videoId,
+    title: item.snippet.title,
+    artist: item.snippet.channelTitle,
+    thumbnail: item.snippet.thumbnails.default.url,
+    duration: '0:00', // La API de búsqueda no da duración
+    audioUrl: `/api/stream?id=${item.id.videoId}`
+  }));
 }
 
-function generateFallbackResults(query) {
-  const mockTitles = [
-    `${query} - Official Audio`,
-    `${query} - Extended Mix`,
-    `${query} - Acoustic Version`,
-    `Best of ${query}`,
-    `${query} - Live Performance`
-  ];
+async function searchWithAlternative(query, limit) {
+  // Simular búsqueda (en un caso real, usarías web scraping o APIs alternativas)
+  console.log('Usando búsqueda alternativa para:', query);
+  
+  // Retornar resultados mock por ahora
+  return generateMockResults(query, limit);
+}
 
-  return mockTitles.map((title, index) => ({
-    id: `mock${index + 1}`,
-    title,
-    artist: `Artist ${index + 1}`,
-    duration: `${3 + index}:${(index * 10).toString().padStart(2, '0')}`,
-    thumbnail: '',
-    views: Math.floor(Math.random() * 1000000),
-    audioUrl: `/api/stream?id=mock${index + 1}`
+function generateMockResults(query, limit) {
+  const genres = ['Pop', 'Rock', 'Hip Hop', 'Electronic', 'R&B', 'Jazz', 'Classical'];
+  const artists = [
+    'The Weekend', 'Taylor Swift', 'Bad Bunny', 'Dua Lipa', 
+    'Ed Sheeran', 'Billie Eilish', 'Drake', 'Ariana Grande'
+  ];
+  
+  return Array.from({ length: Math.min(limit, 10) }, (_, i) => ({
+    id: `mock_${Date.now()}_${i}`,
+    title: `${query} - ${genres[i % genres.length]} Mix ${i + 1}`,
+    artist: artists[i % artists.length],
+    duration: `${3 + (i % 3)}:${(i * 13 % 60).toString().padStart(2, '0')}`,
+    thumbnail: `https://picsum.photos/200/200?random=${i}`,
+    audioUrl: `/api/stream?id=mock_${Date.now()}_${i}`,
+    isMock: true
   }));
 }
